@@ -24,6 +24,20 @@ else
 fi
 [ -z "$cmd" ] && exit 0
 
+# Only enforce inside a jj repository. The guard's whole purpose is protecting
+# jj state, so outside a jj repo it must FAIL OPEN — raw git is legitimate
+# there and blocking it would break ordinary git workflows in any other repo
+# where this plugin happens to be enabled (it is user-scoped). Detection is a
+# cheap upward walk for a .jj entry — no jj invocation, so it cannot hang.
+# (Limitation, as with the gt-guard precedent: evaluated from the session's
+# cwd, so a `cd <jj-repo> && …` compound is judged from the previous cwd.)
+dir="$PWD"; in_jj=""
+while [ "$dir" != "/" ]; do
+  if [ -e "$dir/.jj" ]; then in_jj="1"; break; fi
+  dir="$(dirname "$dir")"
+done
+[ -n "$in_jj" ] || exit 0
+
 block() { echo "BLOCKED by jj-guard: $1" >&2; exit 2; }
 
 # 1) Destructive ops on the jj/git stores. The geirsson incident: an agent
