@@ -7,10 +7,13 @@ Run many Claude agents on many changes at once — each agent in its own jj
 lost to a crash, and integration that **never halts** because jj conflicts are
 first-class objects rather than a blocked merge.
 
-This is the jj successor to a Graphite/git-worktree orchestration. The design
-rationale — including why jj over GitButler (shared-tree write race) and over
-git worktrees (restack-while-checked-out hazard) — is in
-[DESIGN.md](DESIGN.md).
+This is the jj successor to a Graphite/git-worktree orchestration.
+
+**Documentation:**
+
+- [JJ_OVERVIEW.md](JJ_OVERVIEW.md) — new to jj? Start here: the working-copy-as-commit model, colocated jj-on-git, and how jj workspaces differ from git worktrees.
+- [MANUAL.md](MANUAL.md) — operating the plugins: the orchestrator/worker contract, workspace lifecycle, `/jj-delegate`, `/jj-openspec`, the hooks, and a gotchas/troubleshooting table.
+- [DESIGN.md](DESIGN.md) — the design rationale (ADR): why jj over GitButler (shared-tree write race) and over git worktrees (restack-while-checked-out hazard).
 
 ## Plugins
 
