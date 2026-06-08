@@ -29,10 +29,36 @@ fi
 # there and blocking it would break ordinary git workflows in any other repo
 # where this plugin happens to be enabled (it is user-scoped). Detection is a
 # cheap upward walk for a .jj entry — no jj invocation, so it cannot hang.
-# (Limitation, as with the gt-guard precedent: evaluated from the session's
-# cwd, so a `cd <jj-repo> && …` compound is judged from the previous cwd.)
-dir="$PWD"; in_jj=""
-while [ "$dir" != "/" ]; do
+#
+# cwd resolution: the hook sees the SESSION's $PWD, which lags a `cd` inside
+# the command being guarded. So a `cd <other-repo> && git …` would otherwise
+# be judged from the session repo. We parse a single leading `cd <dir>` (incl.
+# a `(cd <dir>` subshell, quoted/relative/absolute/~ targets) and detect from
+# THAT effective directory. This covers the common case; arbitrary mid-command
+# directory changes are still judged from the leading cwd (documented limit).
+effdir="$PWD"
+lead="${cmd#"${cmd%%[![:space:]]*}"}"       # ltrim
+lead="${lead#(}"                             # drop a leading subshell paren
+lead="${lead#"${lead%%[![:space:]]*}"}"      # ltrim again
+case "$lead" in
+  "cd "*|"cd"$'\t'*)
+    tgt="${lead#cd}"
+    tgt="${tgt#"${tgt%%[![:space:]]*}"}"     # ltrim
+    tgt="${tgt%%[&;|)]*}"                      # stop at && ; | or closing )
+    tgt="${tgt%"${tgt##*[![:space:]]}"}"      # rtrim
+    tgt="${tgt%\"}"; tgt="${tgt#\"}"          # strip surrounding quotes
+    tgt="${tgt%\'}"; tgt="${tgt#\'}"
+    case "$tgt" in
+      "")   ;;                                  # bare `cd` → keep $PWD
+      /*)   effdir="$tgt" ;;
+      "~"|"~/"*) effdir="${HOME}${tgt#\~}" ;;
+      *)    effdir="$PWD/$tgt" ;;
+    esac
+    ;;
+esac
+
+dir="$effdir"; in_jj=""
+while [ -n "$dir" ] && [ "$dir" != "/" ]; do
   if [ -e "$dir/.jj" ]; then in_jj="1"; break; fi
   dir="$(dirname "$dir")"
 done
