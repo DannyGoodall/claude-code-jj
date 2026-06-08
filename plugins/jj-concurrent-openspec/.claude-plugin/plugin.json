@@ -1,0 +1,5 @@
+{
+  "name": "jj-concurrent-openspec",
+  "version": "0.1.0",
+  "description": "OpenSpec binding for jj-concurrent: /jj-openspec backgrounds an OpenSpec verb in its own jj workspace. Requires the jj-concurrent plugin and an OpenSpec-managed repo (openspec/ + opsx skills)."
+}

@@ -1,0 +1,23 @@
+{
+  "name": "claude-code-jj",
+  "owner": {
+    "name": "Danny Goodall"
+  },
+  "metadata": {
+    "description": "Concurrent multi-agent orchestration on Jujutsu (jj) workspaces for Claude Code",
+    "homepage": "https://github.com/DannyGoodall/claude-code-jj",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": [
+    {
+      "name": "jj-concurrent",
+      "source": "./plugins/jj-concurrent",
+      "description": "Orchestrator + worker model for running many Claude agents concurrently on jj workspaces: the jj-delegate mechanism, the jj-workspace-worker agent, a snapshot hook (closes jj's crash-before-snapshot gap) and a guard hook (blocks raw mutating git, interactive jj, and destructive ops on the jj/git stores). Workflow-agnostic; useful in any jj repo."
+    },
+    {
+      "name": "jj-concurrent-openspec",
+      "source": "./plugins/jj-concurrent-openspec",
+      "description": "OpenSpec binding over jj-concurrent: /jj-openspec backgrounds an OpenSpec verb (apply / propose / new / ff) in its own jj workspace, mapping verb to shape (implementing vs authoring) and reconcile tail. Enable only in OpenSpec repos; requires the jj-concurrent plugin and the opsx skills."
+    }
+  ]
+}
