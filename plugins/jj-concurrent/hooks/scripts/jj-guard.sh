@@ -5,8 +5,12 @@
 # or destroy the repository, for BOTH orchestrator and worker roles. It is
 # deliberately CHEAP and HANG-PROOF: it pattern-matches the command string and
 # NEVER invokes jj (jj can hang, and a guard that hangs on every Bash call is
-# worse than no guard). Role-specific rules (bookmarks/push are orchestrator-
-# only) are enforced by the worker-agent contract in v0.1.0, not here.
+# worse than no guard). It ALSO enforces the orchestrator/worker role floor:
+# it detects its workspace role from the located .jj/repo (a directory = the
+# default workspace = orchestrator; a regular file = a linked workspace =
+# worker) using only filesystem type tests, and when running as a WORKER it
+# blocks the orchestrator-only operations `jj bookmark …` and `jj git push`.
+# Orchestrator and undetermined roles fail open (these stay allowed).
 #
 # Exit 0 = allow. Exit 2 = block (stderr is shown to the model, which course-
 # corrects). Fails OPEN on any internal error.
@@ -57,14 +61,27 @@ case "$lead" in
     ;;
 esac
 
-dir="$effdir"; in_jj=""
+dir="$effdir"; in_jj=""; jjdir=""
 while [ -n "$dir" ] && [ "$dir" != "/" ]; do
-  if [ -e "$dir/.jj" ]; then in_jj="1"; break; fi
+  if [ -e "$dir/.jj" ]; then in_jj="1"; jjdir="$dir/.jj"; break; fi
   dir="$(dirname "$dir")"
 done
 [ -n "$in_jj" ] || exit 0
 
 block() { echo "BLOCKED by jj-guard: $1" >&2; exit 2; }
+
+# Role detection (cheap, jj-free). The located .jj/repo encodes role with zero
+# coordination: in the DEFAULT workspace .jj/repo is the store DIRECTORY itself
+# (orchestrator); in a LINKED workspace created by `jj workspace add` it is a
+# regular FILE pointing back at the default store (worker). Anything else (e.g.
+# a symlink or exotic layout) is UNKNOWN. Only filesystem type tests — never a
+# jj invocation — so role detection cannot hang.
+role="unknown"
+if [ -d "$jjdir/repo" ]; then
+  role="orchestrator"
+elif [ -f "$jjdir/repo" ]; then
+  role="worker"
+fi
 
 # 1) Destructive ops on the jj/git stores. The geirsson incident: an agent
 #    "debugged" a jj hang with `rm -rf .jj` — only git's backing saved it.
@@ -94,6 +111,20 @@ if printf '%s' "$cmd" | grep -Eq '(^|[^[:alnum:]_./-])jj[[:space:]]+sparse[[:spa
 fi
 if printf '%s' "$cmd" | grep -Eq '(^|[^[:alnum:]_./-])jj[[:space:]][^|;&]*(--interactive|[[:space:]]-i)([[:space:]]|$)'; then
   block "interactive jj (-i/--interactive) hangs automation. Provide filesets and -m instead."
+fi
+
+# 4) Worker role floor: in a LINKED workspace, bookmarks/refs and push are
+#    ORCHESTRATOR-ONLY (the jj-delegate role split). The orchestrator (default
+#    workspace) and any UNKNOWN role fall through and ALLOW these — fail open,
+#    never wrongly block the default workspace. Commit-shaping (jj new/describe/
+#    squash/split/rebase) is never matched here and stays free for workers.
+if [ "$role" = "worker" ]; then
+  if printf '%s' "$cmd" | grep -Eq '(^|[^[:alnum:]_./-])jj[[:space:]]+bookmark([[:space:]]|$)'; then
+    block "jj bookmark is orchestrator-only. Workers must not touch bookmarks/refs — report your change and let the orchestrator integrate and push."
+  fi
+  if printf '%s' "$cmd" | grep -Eq '(^|[^[:alnum:]_./-])jj[[:space:]]+git[[:space:]]+push([[:space:]]|$)'; then
+    block "jj git push is orchestrator-only. Workers never push — report your change and let the orchestrator integrate and push."
+  fi
 fi
 
 exit 0
