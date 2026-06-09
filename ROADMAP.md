@@ -8,9 +8,19 @@ the implementation breakdown. Shipped features live in the
 so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
-This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.6.1 /
-jj-concurrent-openspec v0.2.0 / jj-concurrent-linear v0.2.0 there are
-**4 active proposals**.
+This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.7.0 /
+jj-concurrent-openspec v0.2.0 / jj-concurrent-linear v0.3.0 the backlog is
+**empty** — every proposed change has shipped. New ideas land here as OpenSpec
+proposals.
+
+**Recently shipped (jj-concurrent v0.7.0 + jj-concurrent-linear v0.3.0)** — the
+final batch: all four remaining proposals applied in one 4-worker fan-out and
+landed as a 3-PR stack via `/jj-land`. jj-concurrent gained `/jj-pr-fixup` (the
+amend-after-review loop over an already-open PR) and `/jj-keep-current` (restack
+the stack onto moved trunk + gate landing on green CI); the Linear binding gained
+its inbound half — `/jj-from-linear` (a triaged issue → a dispatched worker) and
+`/jj-burndown` (drain a `ready-for-agent` board as a bounded worker stream). Each
+change added its own new skill file, so the four worker branches were disjoint.
 
 **Recently shipped (jj-concurrent-linear v0.2.0)** — landed as a 2-PR shared-file
 stack (both edit `jj-linear/SKILL.md`) via the now-fixed `/jj-land`, validating
@@ -67,12 +77,10 @@ three new proposals authored in the same four-worker fan-out (below).
 
 ## jj-native stack & history (git-flow parity)
 
-The Graphite workflows this plugin succeeds, rebuilt on jj primitives.
-
-| Change | What it would add |
-|--------|-------------------|
-| [`jj-pr-fixup`](openspec/changes/jj-pr-fixup/) | Reads a PR's review comments, fixes them in a workspace based on the PR head, absorbs each fix into the commit it belongs to, and re-pushes — the amend-after-review loop end-to-end. Builds on the shipped `/jj-absorb` and `/jj-pr`. |
-| [`jj-keep-current`](openspec/changes/jj-keep-current/) | Detect trunk moved → fetch → `jj rebase` the stack → push → re-check CI; gate landing behind a green required-checks signal so a stale-but-green PR never lands. |
+The Graphite workflows this plugin succeeds, rebuilt on jj primitives — **both
+shipped in v0.7.0** (see Recently shipped, above): `jj-pr-fixup` (`/jj-pr-fixup`)
+and `jj-keep-current` (`/jj-keep-current`). Intentionally empty until new
+stack/history work is proposed.
 
 ## OpenSpec orchestration
 
@@ -84,12 +92,10 @@ binding work is proposed.
 
 ## Linear integration
 
-Extending the `jj-concurrent-linear` binding from "report → sub-issue" to a full board↔fan-out loop.
-
-| Change | What it would add |
-|--------|-------------------|
-| [`jj-linear-dispatch`](openspec/changes/jj-linear-dispatch/) | One command from a triaged (`ready-for-agent`) Linear issue to a dispatched `jj-delegate` worker, with the bookmark and PR/change back-link derived deterministically from the issue itself. |
-| [`jj-linear-burndown`](openspec/changes/jj-linear-burndown/) | Drain a board's `ready-for-agent` issues as a bounded stream of concurrent jj workers, updating each issue as its worker lands — the board becomes a work queue with jj as the engine. |
+The `jj-concurrent-linear` binding's board↔fan-out loop — **both shipped in
+binding v0.3.0** (see Recently shipped, above): `jj-linear-dispatch`
+(`/jj-from-linear`) and `jj-linear-burndown` (`/jj-burndown`). Intentionally empty
+until new Linear work is proposed.
 
 ## Safety & isolation
 
@@ -113,12 +119,9 @@ workspace/dev-env work is proposed.
 /jj-openspec apply <change-name>  (fan out across task groups)   # if tasks.md has separable groups
 ```
 
-**Archive-time canonical-spec collisions** — some pairs touch the same canonical
-capability spec, so applying both means merging the delta into one spec at
-archive time rather than two independent syncs:
-
-- the remaining **Linear** changes (`jj-linear-dispatch`, `jj-linear-burndown`) both extend the `jj-linear-sync` capability (now at binding v0.2.0);
-- the **PR family** (`jj-pr-fixup`, `jj-keep-current`) all build on the shipped `/jj-pr` / `/jj-stacked-pr` / `/jj-land` (the `jj-github-pr` capability).
-
-Apply the members of a family in sequence, not in a single blind fan-out, so the
-spec merges stay legible.
+**Archive-time canonical-spec collisions** — when two queued changes touch the
+same canonical capability spec, archive them in sequence (not a blind fan-out) so
+the delta merges into one spec legibly. (The backlog is currently empty; this note
+is kept for the next time a family of related changes is queued. The v0.7.0 / linear
+v0.3.0 batch had no such collision at apply time — each change added its own new
+skill file — so all four applied as one disjoint fan-out.)
