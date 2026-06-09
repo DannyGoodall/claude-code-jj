@@ -1,0 +1,5 @@
+{
+  "name": "jj-concurrent-linear",
+  "version": "0.1.0",
+  "description": "Linear binding for jj-concurrent: at reconcile, maps each worker's structured JSON report to its Linear sub-issue (status transition on a clean finish, blocker/conflict comments otherwise). Requires the jj-concurrent plugin and a configured Linear MCP server; enable only in Linear-tracked repos."
+}

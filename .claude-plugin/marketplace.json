@@ -18,6 +18,11 @@
       "name": "jj-concurrent-openspec",
       "source": "./plugins/jj-concurrent-openspec",
       "description": "OpenSpec binding over jj-concurrent: /jj-openspec backgrounds an OpenSpec verb (apply / propose / new / ff) in its own jj workspace, mapping verb to shape (implementing vs authoring) and reconcile tail. Enable only in OpenSpec repos; requires the jj-concurrent plugin and the opsx skills."
+    },
+    {
+      "name": "jj-concurrent-linear",
+      "source": "./plugins/jj-concurrent-linear",
+      "description": "Linear binding over jj-concurrent: at the orchestrator's reconcile point, maps each worker's structured JSON report to its Linear sub-issue (in-progress → done on a clean finish, blocker/conflict comments otherwise), threading umbrella + sub-issue IDs from dispatch keyed by workspace path. Separate, separately-enabled binding; enable only in Linear-tracked repos. Requires the jj-concurrent plugin and a configured Linear MCP server. No issue creation, no PR cross-linking; the worker stays Linear-agnostic."
     }
   ]
 }
