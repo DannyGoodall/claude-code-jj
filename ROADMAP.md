@@ -9,7 +9,15 @@ so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
 This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.6.1 /
-jj-concurrent-openspec v0.2.0 there are **6 active proposals**.
+jj-concurrent-openspec v0.2.0 / jj-concurrent-linear v0.2.0 there are
+**4 active proposals**.
+
+**Recently shipped (jj-concurrent-linear v0.2.0)** — landed as a 2-PR shared-file
+stack (both edit `jj-linear/SKILL.md`) via the now-fixed `/jj-land`, validating
+the stack-restack fix on a real shared-file stack: `linear-dispatch-issue-creation`
+(auto-create umbrella + per-worker sub-issues at dispatch, thread IDs into the
+manifest) and `jj-linear-reconcile-summary` (post a four-section umbrella summary
++ a human-gate sub-issue at reconcile).
 
 **Recently shipped (jj-concurrent v0.6.1)** — `jj-land-stack-restack`: `/jj-land`
 now waits for mergeability (not just CI) before each merge, defaults to `--merge`
@@ -80,10 +88,8 @@ Extending the `jj-concurrent-linear` binding from "report → sub-issue" to a fu
 
 | Change | What it would add |
 |--------|-------------------|
-| [`linear-dispatch-issue-creation`](openspec/changes/linear-dispatch-issue-creation/) | Auto-create the umbrella + per-worker sub-issues at **dispatch** and thread their IDs into the orchestrator's manifest — the upstream step the current reconcile-side update assumes already happened. |
 | [`jj-linear-dispatch`](openspec/changes/jj-linear-dispatch/) | One command from a triaged (`ready-for-agent`) Linear issue to a dispatched `jj-delegate` worker, with the bookmark and PR/change back-link derived deterministically from the issue itself. |
 | [`jj-linear-burndown`](openspec/changes/jj-linear-burndown/) | Drain a board's `ready-for-agent` issues as a bounded stream of concurrent jj workers, updating each issue as its worker lands — the board becomes a work queue with jj as the engine. |
-| [`jj-linear-reconcile-summary`](openspec/changes/jj-linear-reconcile-summary/) | Turn reconcile into a posted **umbrella summary** (root cause, tests, PR link) and, when warranted, an explicit human-gate sub-issue — instead of a terse status flip that loses the narrative. |
 
 ## Safety & isolation
 
@@ -111,7 +117,7 @@ workspace/dev-env work is proposed.
 capability spec, so applying both means merging the delta into one spec at
 archive time rather than two independent syncs:
 
-- the **Linear** changes (`linear-dispatch-issue-creation`, `jj-linear-dispatch`, `jj-linear-burndown`, `jj-linear-reconcile-summary`) all extend the `jj-linear-sync` capability;
+- the remaining **Linear** changes (`jj-linear-dispatch`, `jj-linear-burndown`) both extend the `jj-linear-sync` capability (now at binding v0.2.0);
 - the **PR family** (`jj-pr-fixup`, `jj-keep-current`) all build on the shipped `/jj-pr` / `/jj-stacked-pr` / `/jj-land` (the `jj-github-pr` capability).
 
 Apply the members of a family in sequence, not in a single blind fan-out, so the

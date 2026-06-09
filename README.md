@@ -22,7 +22,7 @@ This is the jj successor to a Graphite/git-worktree orchestration.
 |--------|--------------|
 | **`jj-concurrent`** | The core. Skills: **`jj-delegate`** (orchestrator/worker lifecycle), **`jj-fleet`** (one at-a-glance status view of all in-flight workers), **`jj-pr`** (push a bookmark + create/update its GitHub PR — the "submit" jj lacks), **`jj-stacked-pr`** (one based PR per bookmark from a stitched stack), **`jj-land`** (land a PR stack bottom-up, CI-gated, retargeting each base to trunk), **`jj-absorb`** (amend-after-review: distribute scattered hunks into their downstack commits), **`jj-checkpoint`** / **`jj-rewind`** (record a named op-log save point before a risky step, then roll back to it), **`jj-preview`** (stand up a throwaway dev environment from any commit/bookmark, then tear it down). Plus the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores; also enforces the orchestrator-only rule — a worker may not run `jj bookmark`/`jj git push`). Workflow-agnostic. |
 | **`jj-concurrent-openspec`** | `jj-openspec` skill — backgrounds an OpenSpec verb (`apply` / `propose` / `new` / `ff` / `relay`) in its own jj workspace, mapping verb → shape → reconcile tail. `apply` can **fan out** across a change's separable `tasks.md` groups, run a **multi-change pipeline** over a *set* of changes (concurrent siblings → independent landings or a stitched stack), and runs `/opsx:verify` as a **gate** that auto-archives on green; `relay` chains author → human go/no-go → apply in one command; a pre-flight **health check** validates artifacts before dispatch. Enable only in OpenSpec repos. |
-| **`jj-concurrent-linear`** | `jj-linear` skill — Linear binding over the orchestrator: at the reconcile point, maps each worker's structured JSON report to its Linear sub-issue (in-progress → done on a clean finish, blocker/conflict comment otherwise). Separate, separately-enabled binding; enable only in Linear-tracked repos (requires a configured Linear MCP server). |
+| **`jj-concurrent-linear`** | `jj-linear` skill — Linear binding over the orchestrator, two halves meeting on the agent-plan manifest: at **dispatch**, auto-create an umbrella issue + one sub-issue per worker and thread their IDs into the manifest; at **reconcile**, map each worker's report to its sub-issue (in-progress → done / blocker comment), post a four-section umbrella summary, and raise a human-gate sub-issue on a manual signal. Separate, separately-enabled binding; enable only in Linear-tracked repos (requires a configured Linear MCP server). |
 
 This marketplace does **not** vendor a jj command reference — it depends on the
 excellent read-only [`jj-vcs@toolbox`](https://github.com/schpet/toolbox/tree/main/plugins/jj-vcs)
@@ -104,7 +104,7 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.6.1** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
+**jj-concurrent v0.6.1** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.2.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
@@ -155,7 +155,10 @@ materialises only its lane — hard file-ownership).
 **mergeability** (not just CI) before each merge, defaults to **`--merge`** for
 multi-PR stacks, and **restacks+repushes** the tail after a rewriting merge — so a
 stack whose PRs share a file lands without cascade-conflicts. (Found while landing
-#16–#19, which needed a manual restack; now encoded in the skill.)
+#16–#19, which needed a manual restack; now encoded in the skill.) **It was then
+validated**: the next batch — `jj-concurrent-linear` v0.2.0 below — was landed as a
+real 2-PR shared-file stack with the fixed `/jj-land`, which merged cleanly (no
+cascade) and left zero remote stragglers.
 
 The guard enforces the universal safety floor (no raw mutating git, no
 interactive jj, no `rm` on the VCS store) inside jj repos for both roles, with
@@ -169,6 +172,12 @@ and reconciled through a deliberate **4-way merge**
 a **gate** that auto-archives on green, a pre-flight **health check** of change
 artifacts, and a **multi-change pipeline** (`apply` over a set of changes as
 concurrent siblings → independent landings or a stitched stack).
+
+**`jj-concurrent-linear` v0.2.0** — the binding grew a **dispatch** half:
+`linear-dispatch-issue-creation` (auto-create the umbrella + per-worker sub-issues
+at dispatch, thread their IDs into the manifest) and `jj-linear-reconcile-summary`
+(a four-section umbrella summary + a human-gate sub-issue at reconcile). Landed as
+the shared-file 2-PR stack that validated `/jj-land`'s stack-restack fix.
 
 **What's next** is captured as OpenSpec proposals — see [ROADMAP.md](ROADMAP.md).
 Deliberately deferred (see [DESIGN.md](DESIGN.md) "Open questions"):
