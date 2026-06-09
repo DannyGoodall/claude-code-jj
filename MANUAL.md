@@ -51,7 +51,7 @@ One Claude session is the **orchestrator**, living in the repository's primary (
 | Worker agent: `jj-workspace-worker` | `plugins/jj-concurrent/agents/jj-workspace-worker.md` | A constrained subagent: works in one workspace, jj only, never bookmarks/push/raw-git, with a structured JSON report. |
 | Snapshot hook | `plugins/jj-concurrent/hooks/scripts/jj-snapshot.sh` | PostToolUse on edits — runs `jj util snapshot` so an agent crash before its next jj command never loses the last edit. |
 | Guard hook | `plugins/jj-concurrent/hooks/scripts/jj-guard.sh` | PreToolUse on Bash — blocks raw mutating git, interactive jj, `rm` on the `.jj`/`.git` stores, and (v0.3.0) `jj bookmark`/`jj git push` from a worker workspace. Only enforces inside a jj repo. |
-| Skill: `jj-openspec` | `plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md` | OpenSpec binding over `jj-delegate`: backgrounds an OpenSpec verb (`apply`/`propose`/`new`/`ff`) on a workspace, mapping verb → shape; `apply` can fan out across `tasks.md` groups. Separate plugin — enable only in OpenSpec repos. |
+| Skill: `jj-openspec` | `plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md` | OpenSpec binding over `jj-delegate`: backgrounds an OpenSpec verb (`apply`/`propose`/`new`/`ff`/`relay`) on a workspace, mapping verb → shape. `apply` fans out across `tasks.md` groups, runs a multi-change pipeline over a *set* of changes, and gates on `/opsx:verify` (auto-archives on green); `relay` chains author → go/no-go → apply; a pre-flight health check validates artifacts first. Separate plugin — enable only in OpenSpec repos. |
 | Skill: `jj-linear` | `plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md` | Linear binding over the orchestrator: at reconcile, maps each worker's JSON report to its Linear sub-issue (in-progress → done, or a blocker/conflict comment). Separate plugin — enable only in Linear-tracked repos; needs the Linear MCP server. |
 
 The jj **command vocabulary** the worker uses is *not* vendored here — it comes from the read-only [`jj-vcs@toolbox`](https://github.com/schpet/toolbox/tree/main/plugins/jj-vcs) plugin, installed unmodified.
@@ -227,9 +227,12 @@ The `jj-concurrent-openspec` plugin binds the orchestrator to OpenSpec. One entr
 
 | Verb(s) | Shape | Worker produces | Reconcile tail |
 |---------|-------|-----------------|----------------|
-| `apply` | **Implementing** | code + ticked `tasks.md` | integrate → `/opsx:verify` → issue tracker → push/PR |
-| `propose` / `new` / `ff` | **Authoring** | change artifacts under `openspec/changes/<name>/` | validate + surface for review; bookmark only; **no verify, no merge** |
+| `apply` | **Implementing** | code + ticked `tasks.md` | integrate → `/opsx:verify` **(gate)** → on green: `/opsx:archive` → issue tracker → push/PR; non-green: **stop** and report |
+| `propose` / `new` / `ff` | **Authoring** | change artifacts under `openspec/changes/<name>/` | validate + surface for review; bookmark only; **no verify, no archive, no merge** |
+| `relay` | **Composite** | author → human go/no-go gate → apply, in one command | authoring tail at the gate; on *go*, the implementing tail seeded from the proposal revision |
 | `explore` | **Interactive** | (a thinking partner) | not a default background candidate — run it inline |
+
+Two further `apply` capabilities (binding v0.2.0): a **pre-flight health check** validates a change's artifacts and filters known-harmless opsx stderr *before* a workspace is provisioned; and a **multi-change pipeline** takes a *set* of changes and applies them as concurrent siblings — independent landings, or a stitched stack submitted via `/jj-stacked-pr`. Full detail lives in the `jj-openspec` SKILL.md (§B/§4c/§P, §6, §3.5).
 
 ### Case study: propose then apply (validated end-to-end)
 
