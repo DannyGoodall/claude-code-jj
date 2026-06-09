@@ -29,7 +29,7 @@ detail; this skill owns only the orchestration.
 
 | Role | Where | Owns |
 |------|-------|------|
-| **Orchestrator** | primary/default workspace | workspace add/forget, **all** `jj bookmark` + `jj git push` + ref ops, integration, the agent-plan manifest, issue tracker |
+| **Orchestrator** | primary/default workspace | workspace add/forget, **all** `jj bookmark` + `jj git push` + ref ops, integration, its own per-session agent-plan manifest (§3), issue tracker |
 | **Worker** | one jj workspace each | edits + shaping its own commits (`jj new`/`jj describe -m`). Never bookmarks, never pushes, never raw mutating git. |
 
 ## 1. Resolve parameters (infer first, ask only on ambiguity)
@@ -41,9 +41,12 @@ detail; this skill owns only the orchestration.
     acceptance criteria).
   If no workload can be determined from arguments or conversation, ask.
 - **bookmark** — explicit argument if given; else derive `feat/<short-slug>`
-  from the workload, matching the repo's branch naming. Surface it in the
-  confirmation step; do not ask separately.
-- **workspace** — `../wt-<short-slug>`, derived from the bookmark.
+  from the workload, matching the repo's branch naming. Under a session id this
+  base name is prefixed with the per-session prefix at provision (see §3);
+  surface the final name in the confirmation step; do not ask separately.
+- **workspace** — `../wt-<short-slug>`, derived from the bookmark; likewise
+  carries the per-session prefix (`../wt-<session-prefix>-<slug>`) when a
+  session id is present (see §3), and stays unprefixed otherwise.
 - **base revision** — the revision the worker should build on (see §3).
 
 ## 2. Confirm (Phase 0 gate)
@@ -63,8 +66,32 @@ folder — see the jj-openspec binding). There is **no seed-commit ceremony**
 (jj has no untracked-file limbo), but you MUST point the workspace at the
 revision that contains the inputs:
 
+**Apply the per-session name prefix.** When this orchestrator is running under
+a resolvable session id (the per-session manifest discriminator — see §1 /
+Per-session manifest namespacing), derive a short, stable **session prefix**
+from that same session id (reproduced identically on resume, so prefixed names
+re-attach in place) and incorporate it into BOTH the workspace directory name
+and the bookmark name so two concurrent orchestrators never contend for the
+same `../wt-<slug>` dir or the same `<slug>` bookmark:
+
+- workspace dir: `../wt-<session-prefix>-<slug>`
+- bookmark: `<session-prefix>-<slug>`
+
+In the **back-compat single-orchestrator path** — no session id is resolvable —
+omit the prefix entirely: the workspace dir stays `../wt-<slug>` and the
+bookmark stays the unprefixed `<slug>`/`feat/<short-slug>` form, identical to
+today. Namespacing engages only when a session id is present; a lone
+orchestrator is unchanged. Use the resolved names (prefixed or not) everywhere
+below — in the `jj workspace add` target, the bookmark create, all dispatch
+briefs, the manifest slice, and teardown — so a session's artifacts stay
+consistent and grouped:
+
 ```bash
-jj workspace add -r <base-rev> ../wt-<slug>     # -r is required; default would
+# <ws-dir>   = ../wt-<session-prefix>-<slug>   (prefixed under a session id)
+#            = ../wt-<slug>                     (back-compat, no session id)
+# <bookmark> = <session-prefix>-<slug>          (prefixed under a session id)
+#            = <slug>/feat/<short-slug>          (back-compat, no session id)
+jj workspace add -r <base-rev> <ws-dir>         # -r is required; default would
                                                 # base on @'s PARENT and miss inputs
 jj bookmark create <bookmark> -r @-             # create the worker's bookmark
                                                 # (orchestrator owns all bookmarks)
@@ -75,8 +102,43 @@ install dependencies / copy gitignored env files the workload needs
 (`cp .env.local ../wt-<slug>/` etc.). If the workload runs the app, assign it
 a distinct port and put that in the dispatch brief.
 
-Write the manifest `.jj-agent-plan.json` at the repo root (gitignored) with
-the slice(s): bookmark, workspace, base-rev, status, workload.
+**Resolve the manifest path (per session).** Before touching any manifest,
+resolve a stable **session-id token** for this orchestrator session and route
+every manifest read/write through the per-session path it implies:
+
+- **Session-id token** — slugify the orchestrator's own session/agent id to a
+  filesystem- and ref-safe token: lowercase, `[a-z0-9-]` only (collapse any
+  other run to a single `-`), trimmed of leading/trailing `-`, bounded to a
+  short length (≈24 chars; if longer, truncate and keep enough to stay unique
+  for this session). The token MUST be **deterministic** — the same session id
+  always slugifies to the same token, so a resumed session resolves the same
+  path and re-attaches to its existing manifest.
+- **Per-session manifest path** — `.jj-agent-plan.<session-id>.json` at the
+  repo root (gitignored). This session reads and writes ONLY this file; it
+  never reads or writes another session's `.jj-agent-plan.*.json`.
+- **Back-compat fallback** — when no session id is resolvable (the lone
+  single-orchestrator case), fall back to the unnamespaced default path
+  `.jj-agent-plan.json`, exactly as before. An existing repo carrying a plain
+  `.jj-agent-plan.json` keeps working with no migration. Throughout this skill,
+  "the manifest" means this resolved path (per-session when a session id
+  exists, default otherwise).
+
+Write the manifest at the resolved path (per §3's session-id resolution;
+gitignored) with the slice(s): bookmark, workspace, base-rev, status, workload.
+Also record the **liveness marker** so other tooling can judge staleness:
+`session` (the owning session-id token, or `null` in the back-compat default
+path) and `heartbeat` (an ISO-8601 timestamp). **Refresh the `heartbeat` on
+every manifest write** as you operate (provision, dispatch, reconcile,
+teardown), so a live session's manifest always carries a fresh timestamp and a
+dead session's goes stale. The manifest's top-level shape is therefore:
+
+```jsonc
+{
+  "session": "<session-id-token-or-null>",  // owning session (liveness marker)
+  "heartbeat": "<ISO-8601 timestamp>",       // refreshed on every write
+  "slices": [ /* bookmark, workspace, base-rev, status, workload, blocker */ ]
+}
+```
 
 ## 4. Dispatch worker(s)
 
@@ -149,7 +211,9 @@ jj makes this the easy part — **integration never halts**.
    jj workspace forget <workspace-name>
    rm -rf ../wt-<slug>            # the directory only — NEVER the repo .jj
    ```
-   Update then delete the manifest entry.
+   Update then delete the slice entry in the resolved manifest (the
+   per-session `.jj-agent-plan.<session-id>.json`, or the default path in the
+   back-compat case), refreshing the `heartbeat` on that write.
 5. Report to the user: bookmark, change-ids, PR/push outcome, test result,
    any conflicts surfaced.
 
@@ -163,6 +227,41 @@ restack barrier** to wait on (unlike git worktrees) — but mind **staleness**:
 do not move a revision that another live workspace builds on. If a workspace
 goes stale, the fix is `jj workspace update-stale` in that workspace, not a
 failure.
+
+## Startup sweep — reclaim stale orchestrator state
+
+Concurrent orchestrators are allowed (each owns its own session-namespaced
+manifest), so a dead or abandoned orchestrator can leave its manifest behind.
+On orchestrator startup, before provisioning, run a conservative sweep so
+abandoned state neither accumulates nor pollutes the fleet view — while never
+disturbing a peer that is merely idle:
+
+1. **Scan siblings.** List every `.jj-agent-plan.*.json` manifest at the repo
+   root (the session-namespaced files alongside the unnamespaced default). This
+   is a read-only enumeration; you are looking only at sibling manifests, never
+   at any worker's commits or working copy.
+2. **Classify by liveness.** For each manifest read its liveness marker (the
+   owning session id + heartbeat the owning orchestrator refreshes as it
+   operates — see §1 / Per-session manifest namespacing for the marker the
+   manifest carries). A manifest is **provably stale** only when BOTH hold:
+   its heartbeat is older than the liveness TTL (or it carries an explicit
+   "session ended" marker) AND no live owner is present. Your own current
+   session's manifest is by definition live — never a sweep target.
+3. **Reclaim only the stale.** Remove or archive (move aside, to aid
+   post-mortem) each provably-stale manifest. Leave every other manifest
+   exactly as found. **Never touch worker commits, bookmarks, or refs**, and
+   **never remove a stale orchestrator's workspaces in the sweep** — leave the
+   directories for inspection (resume-in-place still works); the sweep reclaims
+   only the abandoned *manifest* state.
+4. **Protect live-but-idle peers.** The conservative rule is decisive: if a
+   manifest's owner still appears live — a fresh heartbeat within the TTL, even
+   with no recent activity — the sweep leaves it untouched. A generous TTL plus
+   the both-conditions test (past-TTL AND no fresh heartbeat) prevents
+   reclaiming an in-flight peer mid-run. When in doubt, do not sweep.
+
+This sweep is orchestrator-only and the only place manifests are deleted;
+`/jj-fleet` may *exclude* stale manifests from its read-only view but never
+removes them.
 
 ## Failure handling
 

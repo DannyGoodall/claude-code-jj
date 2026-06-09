@@ -9,7 +9,7 @@ so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
 This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.4.0 /
-jj-concurrent-openspec v0.2.0 there are **10 active proposals**.
+jj-concurrent-openspec v0.2.0 there are **9 active proposals**.
 
 **Recently shipped (jj-concurrent v0.3.0)** — applied concurrently by the plugin's
 own workers and reconciled in one stack
@@ -23,6 +23,12 @@ fan-out, reconciled through a deliberate 4-way merge on `jj-openspec/SKILL.md`
 ([case study](docs/case-studies/openspec-pipeline-fanout-2026-06-09.md)):
 `gate-verify-autoarchive-on-apply`, `jj-openspec-relay`, `jj-openspec-healthcheck`,
 and `multi-change-concurrent-pipeline`.
+
+**Recently shipped (jj-concurrent v0.5.0)** — `multi-orchestrator-namespacing`:
+implemented via a **within-a-change** fan-out (three workers, one change — session-id
++ manifest namespacing, naming + stale-sweep, and the `/jj-fleet` union — stitched
+into one branch). More than one orchestrator can now run in a repo without
+clobbering the manifest or colliding on names.
 
 **Recently shipped (jj-concurrent v0.4.0)** — `jj-land` (`/jj-land`): land a stack
 of GitHub PRs bottom-up, CI-gated, **retargeting each child's base to trunk
@@ -67,10 +73,10 @@ Hardening the concurrency model from convention into structure.
 | Change | What it would add |
 |--------|-------------------|
 | [`sparse-workspace-partitions`](openspec/changes/sparse-workspace-partitions/) | Use `jj workspace add --sparse-patterns` so a worker's working copy only materialises its declared lane — making "these are the only files you touch" a structural guarantee, not a request that surfaces as a conflict at integration. |
-| [`multi-orchestrator-namespacing`](openspec/changes/multi-orchestrator-namespacing/) | Support more than one orchestrator per repo: session-namespaced agent-plan manifests (`.jj-agent-plan.<session>.json`), `/jj-fleet` unions them, per-orchestrator workspace/bookmark prefixes, and cleanup of stale manifests left by dead orchestrators/agents. (Today two orchestrators clobber the one manifest and can collide on names.) |
 
-(The orchestrator-only role rule is now enforced *in the guard hook* — shipped in
-v0.3.0 as `workspace-aware-guard-role-enforcement`.)
+(The orchestrator-only role rule is enforced *in the guard hook* — shipped in
+v0.3.0 as `workspace-aware-guard-role-enforcement`; multi-orchestrator
+namespacing shipped in v0.5.0, see Recently shipped above.)
 
 ## Workspaces & dev environment
 
