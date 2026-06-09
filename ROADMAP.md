@@ -9,7 +9,7 @@ so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
 This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.4.0 /
-jj-concurrent-openspec v0.2.0 there are **9 active proposals**.
+jj-concurrent-openspec v0.2.0 there are **10 active proposals**.
 
 **Recently shipped (jj-concurrent v0.3.0)** — applied concurrently by the plugin's
 own workers and reconciled in one stack
@@ -46,6 +46,7 @@ The Graphite workflows this plugin succeeds, rebuilt on jj primitives.
 |--------|-------------------|
 | [`jj-pr-fixup`](openspec/changes/jj-pr-fixup/) | Reads a PR's review comments, fixes them in a workspace based on the PR head, absorbs each fix into the commit it belongs to, and re-pushes — the amend-after-review loop end-to-end. Builds on the shipped `/jj-absorb` and `/jj-pr`. |
 | [`jj-keep-current`](openspec/changes/jj-keep-current/) | Detect trunk moved → fetch → `jj rebase` the stack → push → re-check CI; gate landing behind a green required-checks signal so a stale-but-green PR never lands. |
+| [`jj-land-colocated-cleanup`](openspec/changes/jj-land-colocated-cleanup/) | Fix `/jj-land` in colocated jj repos: read merge success from PR **state** (not the exit code that fails on jj's detached git HEAD), drop `--delete-branch`, and **explicitly delete each merged PR's remote branch** in cleanup so no stragglers remain. Found landing PRs #11–#13. (Apply after `jj-land` archives.) |
 
 ## OpenSpec orchestration
 
@@ -99,7 +100,7 @@ capability spec, so applying both means merging the delta into one spec at
 archive time rather than two independent syncs:
 
 - the **Linear** changes (`linear-dispatch-issue-creation`, `jj-linear-dispatch`, `jj-linear-burndown`, `jj-linear-reconcile-summary`) all extend the `jj-linear-sync` capability;
-- the **PR family** (`jj-pr-fixup`, `jj-keep-current`) all build on the shipped `/jj-pr` / `/jj-stacked-pr` / `/jj-land` (the `jj-github-pr` capability).
+- the **PR family** (`jj-pr-fixup`, `jj-keep-current`, `jj-land-colocated-cleanup`) all build on the shipped `/jj-pr` / `/jj-stacked-pr` / `/jj-land` (the `jj-github-pr` capability); `jj-land-colocated-cleanup` specifically must apply after `jj-land` archives (it modifies the `jj-land` capability).
 
 Apply the members of a family in sequence, not in a single blind fan-out, so the
 spec merges stay legible.
