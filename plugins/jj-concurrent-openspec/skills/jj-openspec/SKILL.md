@@ -5,11 +5,15 @@ description: |
   jj-concurrent orchestrator. Maps the verb to a shape (implementing vs
   authoring) and the right reconcile tail. For `apply`, can fan a single
   change out across several concurrent jj workers — one workspace per
-  separable tasks.md group — and reconcile them into one change branch.
+  separable tasks.md group — and reconcile them into one change branch. For
+  `apply` over a SET of changes, can run a multi-change pipeline — one
+  apply-shape worker per change as concurrent siblings, integrated as
+  independent landings or a declared-dependency stitched stack.
   Also offers `relay`: draft a proposal, halt at a human go/no-go gate, then
   on go apply it — one command from idea to merged code.
   Triggers: /jj-openspec <verb> [change], "apply <change> on a jj workspace",
-  "fan out apply across task groups", "draft a proposal in the background",
+  "fan out apply across task groups", "apply a set of changes concurrently",
+  "run the multi-change pipeline", "draft a proposal in the background",
   "propose/new/ff <change> with a jj worker", "/jj-openspec relay <idea>",
   "draft then apply in one go". Requires: a jj repo (ideally
   colocated), the jj-concurrent plugin (jj-delegate + jj-workspace-worker),
@@ -59,6 +63,17 @@ apply transparently runs the single-worker distribution. Fan-out never changes
 the final reconciled result relative to single-worker — it only changes how the
 work is distributed. Only the `apply` shape fans out; `propose`/`new`/`ff` and
 `explore` are always single-worker / inline.
+
+The `apply` shape also supports a third concurrency **axis** — the
+**multi-change pipeline** — when it is supplied a *set* of changes rather than
+one. This is the **across-changes axis**: one whole-change apply-shape worker per
+change, dispatched as concurrent siblings, each on its OWN change's proposal
+revision and bookmark, then integrated as independent landings or a stitched
+stack. It is orthogonal to per-group fan-out (the **within-a-change axis**, §A)
+— see §B and §P. Like fan-out, the pipeline is opt-in by data and default-safe
+by policy: it engages only when the supplied set resolves to ≥2 distinct
+apply-ready changes; otherwise apply falls back to the single-change path with
+no behaviour change.
 
 ## 1. Resolve the verb + change
 
@@ -228,6 +243,43 @@ cheap, conservative, and biased toward the safe single-worker fallback.
 This detection is policy, not a spec requirement: the gate (group count / size)
 is a tunable knob, and any ambiguity resolves to single-worker.
 
+## B. Change-set supply and resolution (apply only — picks the pipeline)
+
+§A is the **within-a-change** axis. This section is the **across-changes** axis:
+when `apply` is handed a *set* of changes, the binding resolves that set to a
+concrete confirmed list and decides **single-change vs pipeline distribution**.
+This is the only across-changes decomposition the binding owns; everything
+physical stays jj-delegate's.
+
+1. **Accept the target as a list or a selector.** The apply target may be
+   supplied two ways:
+   - an **explicit list** of change names (`add-export add-import tidy-logs`), or
+   - a **selector** — a glob/query over `openspec/changes/` plus OpenSpec status
+     (e.g. all changes under a prefix, or `openspec list --json` filtered to
+     apply-ready). A bare single change name is the degenerate one-element list.
+2. **Resolve a selector to a concrete list.** Expand the selector against
+   `openspec/changes/` and `openspec list --json`, then **de-duplicate** to a
+   list of existing change names. Never dispatch lazily from an unresolved
+   selector — resolve first so the fan-out width is visible.
+3. **Filter to apply-ready members.** For each resolved name, run
+   `openspec status --change "<name>" --json` and keep only changes that exist
+   and whose `applyRequires` artifacts are complete. **Exclude** any
+   non-existent or unready member, and record an **explicit note** naming what
+   was dropped and why (missing change / unready artifacts). An excluded member
+   is never dispatched.
+4. **Confirm the concrete set before dispatch.** Present the final resolved,
+   de-duplicated, apply-ready set and its **fan-out width** (how many concurrent
+   workspaces will be provisioned) for confirmation before any worker spawns.
+5. **Distribution gate.** If the confirmed set has **≥2 distinct apply-ready
+   changes** → mark for the **pipeline** (§4c, §P). Otherwise (one change, an
+   empty set after exclusions, or only duplicates/overlaps reducing to one) →
+   **single-change fallback** (§4a, the existing path), no pipeline overhead.
+
+The pipeline (across-changes) and per-group fan-out (within-a-change) are fully
+orthogonal: a confirmed pipeline member is itself a normal `apply` invocation,
+so it MAY internally fan out per §A with no coupling — neither policy needs to
+know about the other.
+
 ## 4. Hand off to jj-delegate (distribution-aware)
 
 Invoke the `jj-delegate` skill. The shape from §1 and the distribution from §A
@@ -279,6 +331,39 @@ it own **every** provisioning, dispatch, and integration choreography
 (`jj workspace add -r <base-rev>` per group, background dispatch, never-halting
 integration). The binding adds no jj/workspace mechanics; it only supplies the
 per-group workload strings and the reconcile policy in §5.
+
+### 4c. Multi-change pipeline distribution (apply, gate met from §B)
+
+When §B confirms a set of ≥2 distinct apply-ready changes, hand jj-delegate
+**one whole-change apply-shape workload per change**, as **concurrent siblings**.
+Unlike per-group fan-out (§4b), each pipeline worker is a *separate change* with
+its OWN bookmark and OWN base revision — they are not siblings on one branch.
+
+For each change C in the confirmed set:
+
+- **workload (whole-change)**: `/opsx:apply C` for that single change only — the
+  standard single-change apply brief from §4a, unchanged. The worker works
+  through C's `tasks.md` via the opsx skill, marks C's checkboxes, and touches
+  only C's file area. No worker is scoped across changes.
+- **bookmark**: C's own implementing bookmark `feat/<short-slug-of-C>` (§2),
+  resolved per change.
+- **base-rev**: C's OWN proposal revision (§3 apply base-rev resolved *for C*),
+  so C's `openspec/changes/C/` artifacts are present in its workspace. Different
+  changes may live on different revisions; basing per-change is the only correct
+  seed.
+
+A pipeline member MAY itself meet §A's fan-out gate; if so, that one change
+fans out internally into its own per-group siblings on its own `feat/<slug-of-C>`
+branch — orthogonal to and nested under the pipeline, with no coupling.
+
+Hand all whole-change workloads to `jj-delegate` as concurrent siblings and let
+it own every provisioning, dispatch, and never-halting integration choreography
+(`jj workspace add -r <C's base-rev>` per change, background dispatch). The
+binding adds no jj/workspace mechanics; it only resolves each change's
+parameters and supplies the pipeline reconcile policy in §P.
+
+The single-change hand-off (§4a) is preserved **unchanged** as the fallback path
+for any set that reduces below two apply-ready changes (§B step 5).
 
 ## 5. Reconcile tail (after jj-delegate integrates the worker's commits)
 
@@ -431,6 +516,57 @@ them. No existing verb's mapping, reconcile tail, or (absent) gate changes. The
 relay is an additional trigger, not a modification of the existing single-shape
 triggers.
 
+## P. Pipeline reconcile (across-changes — after §4c dispatch)
+
+The pipeline (§4c) adds a thin reconciliation layer **on top of** the per-change
+reconcile tails of §5. It never collapses two changes' results: each change runs
+its OWN §5 verify → push/PR tail over its OWN reconciled result. The pipeline
+layer only orders the landings/stack and emits a single operator-level summary.
+
+**Per-change reconcile + verify (unchanged, once per change):**
+
+For each pipeline member C, as its worker(s) report, jj-delegate integrates C's
+commits onto C's own `feat/<slug-of-C>` branch (and, if C fanned out internally
+per §A, the §5 reconcile-into-one-change step runs for C first). Then C's §5
+verify → push/PR tail runs **over C's own result only**. Never run one change's
+verify over another change's result, and never merge two changes' verify
+outcomes.
+
+**Integration ordering / stacking (pipeline-level):**
+
+1. **Independent landings (default).** With **no declared inter-change
+   dependency** in the set, each completed change is integrated onto trunk
+   **independently**, in whatever order its worker reports — no ordering is
+   imposed between members. A failed/blocked member does NOT block the others.
+2. **Stitched stack (declared dependencies only).** When inter-change
+   dependencies are **declared** within the set (a change depends on another in
+   the set — taken as DECLARED, e.g. an explicit pipeline argument; absence
+   means independent), compute a **topological order** of those dependencies and
+   integrate the changes as a **stitched stack** in that order (the depended-on
+   change below its dependent). For a stitched stack, the stacked PRs are opened
+   via `/jj-stacked-pr` (parent-based bases) rather than independent `/jj-pr`s.
+3. **Cycle aborts.** If the declared dependencies form a **cycle**, abort
+   stacking with an **explicit error** — never choose an arbitrary order. Report
+   the cycle and stop the stacking decision (independent members can still land).
+4. **Overlap is a first-class conflict.** All integration rides jj-delegate's
+   **never-halting** contract. If two members unexpectedly touch the same lines
+   at integration, the integration still succeeds (exit 0) and jj records the
+   overlap as a **first-class conflict**; resolve it deliberately by **editing
+   the conflict markers in the file** — **never** the interactive `jj resolve` —
+   *before* the affected change's §5 verify tail runs.
+
+**Pipeline summary (emitted once):**
+
+After every member's own verify tail, emit a **single pipeline-level summary**
+listing each change's outcome: **landed** (independent, on trunk), **stacked**
+(in the stitched stack, with its stack position), **conflicted** (overlap
+resolved at integration), or **failed** (worker reported a blocker / verify
+failed). A failed or blocked member leaves its workspace **intact for
+inspection** (per jj-delegate teardown rules) and is reported as failed in the
+summary; it does not block independent members. Report per change: change name,
+bookmark, PR (or stack position), verify outcome, and any remaining unticked
+tasks.
+
 ## Variants
 
 - **Background** is the default (the session stays free; another `/jj-openspec`
@@ -512,6 +648,69 @@ holding the un-pushed work — so a human or a follow-up `/jj-openspec apply
 <change>` can fix the gap. Nothing reached trunk or a PR. (A flaky/inconclusive
 verify takes this same fail-safe stop-and-report path.)
 
+## Worked example: a set of independent changes landed concurrently
+
+Three ready changes — `add-export`, `add-import`, `tidy-logs` — touch disjoint
+areas with no inter-change dependency.
+
+`/jj-openspec apply add-export add-import tidy-logs` resolves the verb (apply →
+implementing) and the **set** (§B). Each is confirmed to exist and be apply-ready
+(`openspec status … --json`); the confirmed set is `{add-export, add-import,
+tidy-logs}`, width 3 ⇒ **pipeline** (§4c).
+
+**Dispatch (§4c):** three concurrent siblings to `jj-delegate`, each a whole
+change on its OWN bookmark and OWN proposal base-rev:
+
+- Worker 1 — `/opsx:apply add-export` on `feat/add-export`, based on
+  add-export's proposal revision.
+- Worker 2 — `/opsx:apply add-import` on `feat/add-import`, based on
+  add-import's proposal revision.
+- Worker 3 — `/opsx:apply tidy-logs` on `feat/tidy-logs`, based on tidy-logs'
+  proposal revision.
+
+**Reconcile (§P):** no dependency declared ⇒ **independent landings**. As each
+worker reports, jj-delegate integrates it onto trunk and that change's OWN §5
+verify → `/jj-pr` tail runs over its OWN result. If `tidy-logs` reports a
+blocker, `add-export` and `add-import` still land and verify; `tidy-logs` is
+reported **failed** with its workspace left intact. Pipeline summary:
+`add-export → landed (PR #N)`, `add-import → landed (PR #M)`,
+`tidy-logs → failed (blocker: …, workspace intact)`.
+
+## Worked example: a declared-dependency stitched stack
+
+Two changes where `add-export-ui` declares a dependency on `add-export-api`
+(the UI needs the API's types).
+
+`/jj-openspec apply add-export-api add-export-ui` with the declared dependency
+`add-export-ui → add-export-api`. The set is ≥2 apply-ready ⇒ pipeline (§4c);
+each is dispatched as a concurrent sibling on its own bookmark/proposal-rev.
+
+**Reconcile (§P):** a dependency is declared ⇒ **stitched stack**. The
+topological order is `add-export-api` below `add-export-ui`. After each member's
+own §5 verify, the pipeline stacks them in that order and opens the PRs via
+`/jj-stacked-pr` (base of `feat/add-export-ui` = `feat/add-export-api`, base of
+`feat/add-export-api` = trunk). Pipeline summary:
+`add-export-api → stacked (base trunk)`, `add-export-ui → stacked (base
+add-export-api)`. (Had the two declared a *cycle*, §P step 3 would abort stacking
+with an explicit error rather than invent an order.)
+
+## Two orthogonal concurrency axes (pipeline vs fan-out)
+
+The `apply` shape has two independent concurrency axes that compose without
+coupling:
+
+| Axis | Skill / section | Unit of work | Bookmarks | Reconcile |
+|------|-----------------|--------------|-----------|-----------|
+| **Across-changes** (pipeline) | this binding §B/§4c/§P | one whole change per worker | one per change | independent landings or stitched stack + pipeline summary |
+| **Within-a-change** (fan-out) | `openspec-apply-fan-out` §A/§4b/§5 | one tasks.md group per worker | one shared change bookmark | reconcile-into-one-change branch |
+
+They are **orthogonal**: the pipeline operates BETWEEN changes (one worker per
+change, distinct bookmarks/revisions); fan-out operates INSIDE one change
+(several workers per change, one shared bookmark). A pipeline member MAY itself
+fan out internally, and neither policy needs to know about the other. Use the
+pipeline to land a backlog of independent ready changes concurrently; use
+fan-out to parallelize the disjoint task groups *within* one of those changes.
+
 ## Fallback guarantee (identical end result)
 
 Fan-out is **always** an optimization, never a correctness requirement. The
@@ -522,3 +721,14 @@ or any verb other than `apply`. Whichever distribution runs, the reconciled
 change branch ends with the **same** completed tasks and the **same** verify →
 push/PR tail — fan-out only changes how the work is distributed, never the
 result. If fan-out detection is ever unsure, it resolves to single-worker.
+
+The **pipeline** carries the same guarantee on the across-changes axis. It is
+**always** an optimization, never a correctness requirement: it engages only
+when §B confirms ≥2 distinct apply-ready changes. The **single-change apply**
+(§4a) is the default and the fallback for **every** sub-threshold case — a single
+change, an empty set after exclusions, or a set that reduces to one after
+de-duplication / overlap exclusion. Applying a change via the pipeline yields
+the **same reconciled result** for that change as applying it on its own; the
+pipeline only changes that several changes are applied concurrently, never any
+individual change's outcome. If the resolved set ever reduces below two, apply
+runs the single-change path with no pipeline overhead.
