@@ -20,7 +20,7 @@ This is the jj successor to a Graphite/git-worktree orchestration.
 
 | Plugin | What it adds |
 |--------|--------------|
-| **`jj-concurrent`** | The core. Skills: **`jj-delegate`** (orchestrator/worker lifecycle), **`jj-fleet`** (one at-a-glance status view of all in-flight workers), **`jj-pr`** (push a bookmark + create/update its GitHub PR — the "submit" jj lacks), **`jj-stacked-pr`** (one based PR per bookmark from a stitched stack), **`jj-absorb`** (amend-after-review: distribute scattered hunks into their downstack commits), **`jj-checkpoint`** / **`jj-rewind`** (record a named op-log save point before a risky step, then roll back to it). Plus the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores; also enforces the orchestrator-only rule — a worker may not run `jj bookmark`/`jj git push`). Workflow-agnostic. |
+| **`jj-concurrent`** | The core. Skills: **`jj-delegate`** (orchestrator/worker lifecycle), **`jj-fleet`** (one at-a-glance status view of all in-flight workers), **`jj-pr`** (push a bookmark + create/update its GitHub PR — the "submit" jj lacks), **`jj-stacked-pr`** (one based PR per bookmark from a stitched stack), **`jj-land`** (land a PR stack bottom-up, CI-gated, retargeting each base to trunk), **`jj-absorb`** (amend-after-review: distribute scattered hunks into their downstack commits), **`jj-checkpoint`** / **`jj-rewind`** (record a named op-log save point before a risky step, then roll back to it). Plus the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores; also enforces the orchestrator-only rule — a worker may not run `jj bookmark`/`jj git push`). Workflow-agnostic. |
 | **`jj-concurrent-openspec`** | `jj-openspec` skill — backgrounds an OpenSpec verb (`apply` / `propose` / `new` / `ff` / `relay`) in its own jj workspace, mapping verb → shape → reconcile tail. `apply` can **fan out** across a change's separable `tasks.md` groups, run a **multi-change pipeline** over a *set* of changes (concurrent siblings → independent landings or a stitched stack), and runs `/opsx:verify` as a **gate** that auto-archives on green; `relay` chains author → human go/no-go → apply in one command; a pre-flight **health check** validates artifacts before dispatch. Enable only in OpenSpec repos. |
 | **`jj-concurrent-linear`** | `jj-linear` skill — Linear binding over the orchestrator: at the reconcile point, maps each worker's structured JSON report to its Linear sub-issue (in-progress → done on a clean finish, blocker/conflict comment otherwise). Separate, separately-enabled binding; enable only in Linear-tracked repos (requires a configured Linear MCP server). |
 
@@ -104,7 +104,7 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.3.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
+**jj-concurrent v0.4.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
@@ -121,6 +121,12 @@ and reconciled in one stack (see
 - **`/jj-absorb`** — amend-after-review: preview with `jj absorb --dry-run`, distribute scattered working-copy hunks into their downstack commits, report where each landed.
 - **`/jj-checkpoint` + `/jj-rewind`** — record a named op-log save point before a risky integration, then roll the whole repo back to it via `jj op restore`.
 - **Guard role enforcement** — the guard hook now blocks `jj bookmark`/`jj git push` from a worker workspace (the orchestrator-only rule, previously contract-only), while still allowing them in the orchestrator's primary workspace.
+
+**v0.4.0** adds **`/jj-land`** — land a stack of GitHub PRs bottom-up, CI-gated,
+**retargeting each child PR's base to trunk before merge** and tidying merged
+bookmarks/stale workspaces. It directly closes the stacked-merge hazard that once
+orphaned upper PRs onto deleted feature branches. (Shipped alongside three new
+roadmap proposals authored in the same four-worker fan-out — see [ROADMAP.md](ROADMAP.md).)
 
 The guard enforces the universal safety floor (no raw mutating git, no
 interactive jj, no `rm` on the VCS store) inside jj repos for both roles, with
