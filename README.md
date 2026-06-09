@@ -68,11 +68,33 @@ claude: [jj workspace add -r … · bookmark create · dispatch jj-workspace-wor
 you:    /jj-openspec apply timetabling-strand-location-grouping
 ```
 
+## Validation
+
+Every functional claim has been exercised end-to-end against **real jj 0.42** in
+colocated mode. Summary of what was run and what it proved:
+
+| Area | What was validated | Result |
+|------|--------------------|--------|
+| **jj substrate** | `workspace add -r @` carries in-flight inputs; snapshot hook captures an edit against live jj; cross-workspace visibility; **integration never halts** (rebase with a real conflict → exit 0, first-class conflict object); stale detection + `jj workspace update-stale` recovery | 6/6 |
+| **Single-worker loop** | a real background `jj-workspace-worker` provisioned → worked → reported (~28s), contract-abiding (jj only, no bookmarks/push); **snapshot hook fired** — a discrete `snapshot working copy` op appears in `jj evolog` between the worker's edits and its describe (the crash-gap protection); integrated via an orchestrator-owned bookmark | ✓ |
+| **Concurrent multi-worker** | two background workers dispatched in parallel on sibling workspaces (~16–17s, overlapping); **physical isolation proven** — each workspace held only its own file, no clobber; both integrated into one stack | ✓ |
+| **Same-file concurrent conflict** | two workers edited the *same line* of one file (1.1.0 vs 2.0.0) in separate workspaces; isolation held (no race); rebase exited 0 and recorded a **first-class conflict**; resolved by editing markers + snapshot (never `jj resolve`) — the exact scenario a shared-working-tree model cannot do safely | ✓ |
+| **Colocated jj-on-git** | jj reads the full git history and `jj @-` == `git HEAD`; the colocated commit→bookmark→`jj git push` flow works (one-time `jj bookmark track main --remote=origin` after init) | ✓ |
+| **cwd-aware guard** | enforces inside a jj repo / fails open outside; a leading `cd <dir>` is parsed so `cd <non-jj> && git …` is judged from the right directory | 6/6 |
+| **`/jj-openspec` relay** | `propose` (authoring) drafts the change artifacts in a workspace; the apply worker bases on the proposal revision (**seed-intent — no seed commit**); `apply` (implementing) writes the code + ticks `tasks.md` | ✓ |
+
+Untested by choice: a *real* jj hang (intermittent by nature — `resume-in-place` is
+ready for it, since a stalled worker's edits are already snapshotted).
+
 ## Status
 
-v0.1.0 — initial scaffold. The guard enforces the universal safety rules
-(no raw mutating git, no interactive jj, no `rm` on the VCS store) for both
-roles; role-specific enforcement (bookmarks/push are orchestrator-only) is
-carried by the worker-agent contract for now. See DESIGN.md "Open questions"
-for what is deliberately deferred (smoke spike, sparse-workspace partitions,
-workspace-based role detection in the guard).
+**v0.1.2** — functionally validated and documented. The guard enforces the
+universal safety rules (no raw mutating git, no interactive jj, no `rm` on the
+VCS store) inside jj repos for both roles, with cwd-aware repo detection;
+role-specific enforcement (bookmarks/push are orchestrator-only) is carried by
+the worker-agent contract. Deliberately deferred to a later version (see
+[DESIGN.md](DESIGN.md) "Open questions"): workspace-based role detection *in* the
+guard, sparse-workspace partitions (`--sparse-patterns`), and smarter guard
+matching (it currently matches git/jj *mentions* in a command string, and
+`git -C <dir>` slips past — the worker contract is the primary line, the guard a
+backstop).
