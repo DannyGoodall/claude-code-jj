@@ -133,6 +133,68 @@ provisioning and MUST NOT regress existing flows.
 Then install dependencies as the workload requires. If the workload runs the
 app, assign it a distinct port and put that in the dispatch brief.
 
+### Optional sparse partition (hard file-ownership boundary)
+
+Provisioning MAY additionally scope the worker's working copy to a declared
+**sparse partition** — a pattern set — so only those paths materialise on disk.
+A worker provisioned this way physically cannot read or write files outside its
+lane: out-of-partition paths are simply never checked out, so disjoint-file
+ownership becomes a structural guarantee instead of a soft instruction in the
+dispatch brief. This is **opt-in and per-worker**: omit it and provisioning is
+byte-for-byte the full-tree path above.
+
+Add the workspace already-narrowed so there is no transient window where the
+full tree exists. On the pinned jj (0.42.x), `jj workspace add --sparse-patterns`
+takes a *strategy* enum (`copy` / `full` / `empty`), **not** a glob list — so
+create the workspace with `--sparse-patterns empty` (nothing checks out), then
+declare the lane's glob set with one non-interactive `jj sparse set --clear
+--add` from inside the new workspace:
+
+```bash
+# Sparse case — create empty, then narrow to exactly the lane's paths:
+jj workspace add -r <base-rev> --sparse-patterns empty <ws-dir>
+( cd <ws-dir> && jj sparse set --clear --add <glob> [--add <glob> ...] )
+# --clear drops the default everything-pattern; each --add includes one path/dir.
+# After this only the partition's paths exist on disk; everything else is absent.
+# NEVER `jj sparse edit` — it is interactive and the worker contract forbids it.
+```
+
+Verified on jj 0.42.0: `--sparse-patterns empty` materialises nothing but
+`.jj`, and `jj sparse set --clear --add laneA` then checks out only `laneA/`,
+leaving sibling lanes physically absent (`ls` of an out-of-lane path returns
+"No such file or directory"). A future jj that accepts a one-shot glob list on
+`workspace add` could fold both steps into one; the two-step form above is the
+correct shape for the pinned version.
+
+The base-revision seed-intent rule above is **unaffected** by the sparse
+choice: the partition governs *which files materialise* in the workspace, never
+*which revision* it starts from. Choose the base exactly as in the full-tree
+case, then optionally narrow what checks out.
+
+**Build the partition as edit-paths ∪ read-paths.** Include not only the paths
+the worker is expected to *edit* but also the paths the workload must *read* to
+function — the invoked skill's own inputs and any in-lane context it depends on
+(e.g. the OpenSpec change folder for an `/opsx:apply` worker). A partition
+scoped to edits-only starves the worker of context it legitimately needs and
+produces spurious missing-file failures. The orchestrator owns this set; it
+widens the partition deliberately rather than letting the worker improvise.
+
+**Concurrent siblings' partitions MUST be non-overlapping.** The absence of
+out-of-lane files is the enforcement mechanism — overlapping partitions
+re-introduce soft ownership and let two workers touch the same file. Choose
+disjoint partitions so no sibling can produce a cross-lane edit even by mistake.
+
+**Trade-off — sparse omits files, so whole-repo tooling will not work.** A
+sparse working copy genuinely lacks the out-of-lane files, so any build,
+type-check, or test tooling that needs the full repository tree (cross-repo
+import resolution, whole-repo type-checking, a full-suite run) will error on
+absent imports inside a sparse workspace. **Decision rule:** choose a sparse
+partition only when the worker's in-workspace verification is self-contained
+within its lane. When verification needs the full tree, either provision that
+worker full-tree (decline the sparse option) or run that verification outside
+the sparse workspace (e.g. after integration into a full-tree revision). Make
+this a deliberate per-fan-out choice, not a default.
+
 **Resolve the manifest path (per session).** Before touching any manifest,
 resolve a stable **session-id token** for this orchestrator session and route
 every manifest read/write through the per-session path it implies:
