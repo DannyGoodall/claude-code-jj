@@ -160,10 +160,10 @@ failure.
 ## Situational awareness
 
 `jj log` does not auto-snapshot sibling workspaces, so a plain log can show
-stale state. Before reasoning about cross-workspace status, snapshot each live
-workspace first (e.g. loop `jj -R <ws> util snapshot` over the manifest's
-workspaces), THEN `jj log`. Keep the operation log short; abandon dead
-experiments.
+stale state. For an at-a-glance view of every in-flight worker — snapshot each
+live workspace first, then read jj state joined with the agent-plan manifest's
+status/blocker — use [`/jj-fleet`](../jj-fleet/SKILL.md). Keep the operation log
+short; abandon dead experiments.
 
 ## Variants
 
