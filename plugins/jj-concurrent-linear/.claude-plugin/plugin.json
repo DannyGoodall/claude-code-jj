@@ -1,5 +1,5 @@
 {
   "name": "jj-concurrent-linear",
   "version": "0.2.0",
-  "description": "Linear binding for jj-concurrent in two halves: at dispatch, auto-creates an umbrella issue + one sub-issue per worker, labels them ready-for-agent, and threads { workspacePath -> { umbrellaId, subIssueId } } into the agent-plan manifest before dispatch; at reconcile, maps each worker's structured JSON report to its sub-issue (status transition on a clean finish, blocker/conflict comments otherwise). Requires the jj-concurrent plugin and a configured Linear MCP server; enable only in Linear-tracked repos."
+  "description": "Linear binding for jj-concurrent in two halves: at dispatch, auto-creates an umbrella issue + one sub-issue per worker, labels them ready-for-agent, and threads { workspacePath -> { umbrellaId, subIssueId } } into the agent-plan manifest before dispatch; at reconcile, maps each worker's structured JSON report to its sub-issue (status transition on a clean finish, blocker/conflict comments otherwise), posts a four-section umbrella summary (what changed / root cause / test results / PR link), and raises a ready-for-human human-gate sub-issue only on a manual/visual signal. Requires the jj-concurrent plugin and a configured Linear MCP server; enable only in Linear-tracked repos."
 }

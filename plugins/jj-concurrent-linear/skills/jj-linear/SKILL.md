@@ -7,12 +7,15 @@ description: |
   { workspacePath → { umbrellaId, subIssueId } } into the manifest before any
   worker is dispatched. At RECONCILE: map each worker's structured JSON report
   to its sub-issue — transition in-progress → done on a clean finish, post a
-  blocker/conflict comment otherwise — keyed by the worker's workspace path.
+  blocker/conflict comment otherwise — keyed by the worker's workspace path; and
+  post a four-section umbrella summary (what changed / root cause / test results
+  / PR link), raising a ready-for-human human-gate sub-issue only on a
+  manual/visual signal.
   Triggers: /jj-linear, "create Linear issues for the fan-out", "sync worker
   reports to Linear", "update Linear sub-issues from the jj fan-out", "reconcile
-  workers into Linear". Requires: the jj-concurrent plugin (jj-delegate +
-  jj-workspace-worker) and a configured Linear MCP server (mcp__linear-server__*).
-  Enable only in Linear-tracked repos.
+  workers into Linear", "post the umbrella summary to Linear". Requires: the
+  jj-concurrent plugin (jj-delegate + jj-workspace-worker) and a configured
+  Linear MCP server (mcp__linear-server__*). Enable only in Linear-tracked repos.
 metadata:
   version: "0.2.0"
   author: outfitter-style
@@ -294,6 +297,145 @@ blocker/conflict comment, **check the sub-issue's last comment**: if it is
 byte-identical to the comment about to be posted, **skip** the post. This keeps a
 reconcile retry from posting the same blocker comment twice.
 
+<!-- BEGIN jj-linear-reconcile (umbrella summary + human-gate) — owned by jj-linear-reconcile-summary; edit only this delimited block -->
+
+## 5. Reconcile — umbrella summary + human-gate sub-issue
+
+A **separate reconcile-time concern** from §2's per-worker sub-issue status sync.
+Where §2 maps a report to *that worker's status sub-issue* (the `jj-linear-sync`
+capability), this section posts a **structured summary to the fan-out's umbrella
+issue** and, when warranted, raises an explicit **human-gate sub-issue** — the
+`jj-linear-reconcile` capability. The two are independent: this section neither
+transitions status sub-issues nor posts blocker comments to them, and it does not
+depend on §2 running. It also lives at the orchestrator's reconcile point,
+reading only the worker report, the `jj-openspec-binding` verify/PR outcome, and
+the agent-plan manifest. Every Linear call here is **best-effort** and **never**
+blocks integration (rebase / merge / teardown).
+
+**Absent when disabled.** This section's behaviour belongs to the
+`jj-concurrent-linear` plugin (requires `jj-concurrent` + a configured Linear
+MCP). Where the plugin is **not** enabled, **no umbrella summary comment is
+posted and no human-gate sub-issue is created**, and the orchestrator reconciles
+workers exactly as bare `jj-concurrent` does — no triggers, no Linear calls.
+
+### 5.1 Inputs (read-only; worker stays Linear-agnostic)
+
+Derive everything below **solely** from existing inputs — no new report field,
+no Linear identifier handed to the worker:
+
+- **Worker JSON report** — `workspace`, `changes`, `tests_run`, `blocked_on`,
+  `conflicts_seen`, `notes` (read-only; the report format is unchanged).
+- **`jj-openspec-binding` reconcile-tail outputs** — the **verify outcome**
+  (pass/fail) and the **PR link / integrated change-id(s)** produced by the
+  binding's verify-then-push/PR tail.
+- **Agent-plan manifest** — the `umbrellaId` keyed by the reporting worker's
+  **workspace path** (the `{ workspacePath → { umbrellaId, subIssueId } }` map
+  §1 records at dispatch). This section reads `umbrellaId`; §2 reads `subIssueId`.
+
+**Resolve the umbrella by workspace path.** Take `report.workspace` and look up
+`manifest[report.workspace].umbrellaId`. That umbrella — and **no other** — is
+the post target.
+
+- If **no umbrella is recorded** for that workspace path → **skip-and-note**:
+  surface a non-fatal note in the reconcile report and **never** fall back to a
+  sibling/unrelated issue (§5.5).
+- If the **Linear MCP is unavailable** → **skip-and-note** and proceed (§5.5).
+- A **stalled / no-report worker** (recovered by resume-in-place) produces **no**
+  umbrella summary and **no** human-gate sub-issue; only a successor's real
+  report from the **same** workspace drives the next umbrella update (§5.5).
+
+### 5.2 The four-section umbrella summary (single source of truth)
+
+Compose **one** structured comment with exactly these four sections, each mapped
+to a documented source. The summary **never invents content beyond these
+sources**; a section with no source data renders an explicit **"none reported"**
+rather than fabricated prose.
+
+| Section | Source |
+|---|---|
+| **What changed** | worker report `changes` list (+ PR title/diff from the reconcile tail when present) |
+| **Root cause(s)** | worker report `notes`; plus `blocked_on` / `conflicts_seen` text when the worker reported blocked or conflicted |
+| **Test results** | worker report `tests_run` + the `jj-openspec-binding` verify outcome (pass/fail) |
+| **PR link** | reconcile-tail push/PR output when a PR was opened; else **"no PR"** with the integrated change-id(s) |
+
+When a human-gate sub-issue is raised (§5.4), the summary **references** that it
+was raised so the umbrella reader sees the residual human work.
+
+### 5.3 Post the summary (idempotent on retry)
+
+Post the §5.2 comment as a **single** comment to the resolved umbrella issue via
+the Linear MCP.
+
+**Idempotent — last-summary guard:** reconcile MAY be retried. Before posting,
+check the last summary comment already present for that worker on the umbrella;
+if the comment about to be posted is **byte-identical**, **skip** the post (no
+duplicate, no error). A retried reconcile with the same report and outcome must
+not litter the umbrella with repeated summaries.
+
+### 5.4 Auto human-gate sub-issue (precise trigger)
+
+**Trigger — manual/visual signal only.** Create a `ready-for-human` sub-issue
+**only** when the worker report or the verify outcome carries a
+**manual/visual-verification signal** (e.g. a `notes` or verify field indicating
+a UI/visual check that automated verify cannot cover is outstanding).
+
+- A **fully-automated clean finish** — automated verify passed and **no**
+  manual/visual signal — creates **no** sub-issue (summary only).
+- A reported **blocker or conflict** does **NOT**, by itself, create a
+  `ready-for-human` sub-issue. That is a different failure mode, surfaced in the
+  summary's **Root-cause** section (and, under §2 / `jj-linear-sync`, on the
+  status sub-issue). Keeping blockers off the `ready-for-human` label keeps the
+  label meaningful (a human's eyes on the running UI, not "is blocked").
+- This section does **not decide how** the manual/visual signal is produced
+  inside verify — it consumes whatever signal the verify outcome / report
+  exposes. It also does **not** mark the change complete on automated verify
+  alone while a human-gate sub-issue is outstanding.
+
+**On trigger**, create a Linear **sub-issue under the umbrella** (resolved by
+workspace path), labelled **`ready-for-human`**, whose body is a what/why/where
+checklist:
+
+- **What to verify** — the specific UI/visual behaviour a human must eyeball.
+- **Why automated verify cannot cover it** — the gap automation leaves.
+- **Where to look** — the PR link and/or the affected route or screenshot target.
+
+This makes the sub-issue actionable by a human with no session context.
+
+**Missing `ready-for-human` label.** Default policy: the label must **pre-exist**
+in the team's Linear workspace. If it is absent, **skip-and-note** (consistent
+with best-effort) rather than creating the label.
+
+### 5.5 Failure & edge handling (best-effort)
+
+Every Linear call in this section — the summary comment and the human-gate
+sub-issue create — is **best-effort**:
+
+- **Linear MCP unavailable / call fails** → **skip** that call and surface a
+  non-fatal note in the orchestrator's reconcile report; the worker's
+  integration (rebase / merge / teardown) **proceeds unaffected**.
+- **No umbrella recorded** for the reporting workspace → **skip-and-note**; never
+  post to a sibling or unrelated issue as a fallback (keying is strict on
+  workspace path).
+- **Stalled / no-report worker** → no umbrella summary and no human-gate
+  sub-issue until a successor in the **same** workspace returns a report.
+
+### 5.6 Relationship to §2 / `jj-linear-sync` (non-goals held apart)
+
+This umbrella-summary + human-gate concern is **disjoint** from §2's status sync:
+
+- §2 / `jj-linear-sync` owns the **per-worker status sub-issue** — in-progress →
+  done on a clean finish, blocker/conflict comment otherwise.
+- This section owns the **umbrella summary comment** and the **human-gate
+  sub-issue** only. It does **not** create the umbrella, does **not** create or
+  transition status sub-issues, does **not** post blocker comments to status
+  sub-issues, and does **not** cross-link GitHub ↔ Linear beyond pasting the PR
+  link into the summary.
+
+If both ship, `jj-linear-sync` flips the status sub-issue while this section
+posts the umbrella summary and raises the human gate; neither imports the other.
+
+<!-- END jj-linear-reconcile -->
+
 ## Summary
 
 The orchestrator is the only role holding **both** the worker's report and the
@@ -301,4 +443,8 @@ Linear identifiers, so the binding lives at its reconcile point. Dispatch record
 `{ workspacePath → { umbrellaId, subIssueId } }`; reconcile looks the sub-issue
 up by `report.workspace` and applies the §2.2 mapping — idempotent done
 transition on a clean finish, blocker/conflict comment otherwise — best-effort,
-strictly keyed, never blocking integration, never marking a stall done.
+strictly keyed, never blocking integration, never marking a stall done. Layered
+on top (§5, the `jj-linear-reconcile` capability), reconcile also posts a
+four-section **umbrella summary** (what changed / root cause / test results / PR
+link) and, only on a manual/visual signal, raises a `ready-for-human` **human-gate
+sub-issue** — both best-effort, idempotent, and strictly keyed on workspace path.
