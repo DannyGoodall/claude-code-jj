@@ -28,8 +28,8 @@
 
 ## 5. Back-compat and verification
 
-- [ ] 5.1 Confirm a lone single-orchestrator session (no session id) reads/writes the default manifest path and uses unprefixed names, identical to prior behaviour
-- [ ] 5.2 Confirm an existing repo carrying a plain `.jj-agent-plan.json` works without migration
-- [ ] 5.3 Verify two concurrent orchestrators produce non-colliding manifests, workspace dirs, and bookmarks, and that `/jj-fleet` unions both sessions
-- [ ] 5.4 Verify a stale manifest from a dead orchestrator is excluded from the fleet view and swept on next startup, with worker commits untouched
-- [ ] 5.5 Run `openspec validate multi-orchestrator-namespacing` and resolve any issues
+- [x] 5.1 Confirm a lone single-orchestrator session (no session id) reads/writes the default manifest path and uses unprefixed names, identical to prior behaviour
+- [x] 5.2 Confirm an existing repo carrying a plain `.jj-agent-plan.json` works without migration
+- [x] 5.3 Verify two concurrent orchestrators produce non-colliding manifests, workspace dirs, and bookmarks, and that `/jj-fleet` unions both sessions
+- [x] 5.4 Verify a stale manifest from a dead orchestrator is excluded from the fleet view and swept on next startup, with worker commits untouched
+- [x] 5.5 Run `openspec validate multi-orchestrator-namespacing` and resolve any issues

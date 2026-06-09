@@ -104,7 +104,7 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.4.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
+**jj-concurrent v0.5.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
@@ -127,6 +127,15 @@ and reconciled in one stack (see
 bookmarks/stale workspaces. It directly closes the stacked-merge hazard that once
 orphaned upper PRs onto deleted feature branches. (Shipped alongside three new
 roadmap proposals authored in the same four-worker fan-out — see [ROADMAP.md](ROADMAP.md).)
+
+**v0.5.0** adds **multi-orchestrator support** (`multi-orchestrator-namespacing`):
+per-session agent-plan manifests (`.jj-agent-plan.<session>.json`), per-orchestrator
+workspace/bookmark prefixes, a `/jj-fleet` that **unions all sessions**, and a
+stale-state startup sweep — so more than one orchestrator can run in a single repo
+without clobbering the manifest or colliding on names. It was implemented via the
+first **within-a-change** fan-out: three workers each took a separable task group
+of the one change (session-id+manifest / naming+cleanup / fleet-union) and were
+reconciled into one branch.
 
 The guard enforces the universal safety floor (no raw mutating git, no
 interactive jj, no `rm` on the VCS store) inside jj repos for both roles, with
