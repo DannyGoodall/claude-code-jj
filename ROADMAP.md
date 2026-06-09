@@ -8,14 +8,21 @@ the implementation breakdown. Shipped features live in the
 so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
-This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.3.0
-there are **12 active proposals**.
+This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.3.0 /
+jj-concurrent-openspec v0.2.0 there are **8 active proposals**.
 
-**Recently shipped (v0.3.0)** — applied concurrently by the plugin's own workers
-and reconciled in one stack ([case study](docs/case-studies/fleet-fanout-2026-06-09.md)):
+**Recently shipped (jj-concurrent v0.3.0)** — applied concurrently by the plugin's
+own workers and reconciled in one stack
+([case study](docs/case-studies/fleet-fanout-2026-06-09.md)):
 `jj-absorb-fixup` (`/jj-absorb`), `jj-stacked-pr` (`/jj-stacked-pr`),
 `jj-op-checkpoint` (`/jj-checkpoint` + `/jj-rewind`), and
 `workspace-aware-guard-role-enforcement` (guard now blocks worker bookmark/push).
+
+**Recently shipped (jj-concurrent-openspec v0.2.0)** — a second four-worker
+fan-out, reconciled through a deliberate 4-way merge on `jj-openspec/SKILL.md`
+([case study](docs/case-studies/openspec-pipeline-fanout-2026-06-09.md)):
+`gate-verify-autoarchive-on-apply`, `jj-openspec-relay`, `jj-openspec-healthcheck`,
+and `multi-change-concurrent-pipeline`.
 
 ---
 
@@ -31,14 +38,11 @@ The Graphite workflows this plugin succeeds, rebuilt on jj primitives.
 
 ## OpenSpec orchestration
 
-Sharpening the `jj-concurrent-openspec` binding.
-
-| Change | What it would add |
-|--------|-------------------|
-| [`gate-verify-autoarchive-on-apply`](openspec/changes/gate-verify-autoarchive-on-apply/) | Make `/opsx:verify` a real **gate** in the apply tail (a change that fails verify never reaches trunk/PR), and auto-archive on green — sync delta specs to canonical and move the change to `archive/`, so a clean apply leaves no manual follow-up. |
-| [`jj-openspec-relay`](openspec/changes/jj-openspec-relay/) | A single propose → (review) → apply entry point, with the apply base-revision flowing automatically from the just-approved proposal — instead of two human-initiated commands with a manual hand-off. |
-| [`jj-openspec-healthcheck`](openspec/changes/jj-openspec-healthcheck/) | Validate a change's artifacts **before** provisioning a workspace (fail fast with an operator-facing blocker, not confusing worker output), and filter the known-harmless opsx schema-config stderr so a genuine error doesn't hide in the noise. |
-| [`multi-change-concurrent-pipeline`](openspec/changes/multi-change-concurrent-pipeline/) | `/jj-openspec apply` over a **set** of independent changes as concurrent siblings — the across-changes axis of concurrency — landed independently or stitched into one stack. |
+All four proposals that sharpened the `jj-concurrent-openspec` binding —
+`gate-verify-autoarchive-on-apply`, `jj-openspec-relay`, `jj-openspec-healthcheck`,
+and `multi-change-concurrent-pipeline` — **shipped in binding v0.2.0** (see
+Recently shipped, above). This section is intentionally empty until new
+binding work is proposed.
 
 ## Linear integration
 
@@ -75,7 +79,6 @@ v0.3.0 as `workspace-aware-guard-role-enforcement`.)
 capability spec, so applying both means merging the delta into one spec at
 archive time rather than two independent syncs:
 
-- the **OpenSpec-binding** changes (`jj-openspec-relay`, `jj-openspec-healthcheck`, `multi-change-concurrent-pipeline`) all extend the `jj-openspec-binding` capability;
 - the **Linear** changes (`linear-dispatch-issue-creation`, `jj-linear-dispatch`, `jj-linear-burndown`, `jj-linear-reconcile-summary`) all extend the `jj-linear-sync` capability;
 - the **PR family** (`jj-pr-fixup`, `jj-keep-current`, `jj-land`) all build on the shipped `/jj-pr` / `/jj-stacked-pr` (the `jj-github-pr` capability).
 
