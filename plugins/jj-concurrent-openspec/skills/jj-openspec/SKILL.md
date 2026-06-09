@@ -6,9 +6,12 @@ description: |
   authoring) and the right reconcile tail. For `apply`, can fan a single
   change out across several concurrent jj workers — one workspace per
   separable tasks.md group — and reconcile them into one change branch.
+  Also offers `relay`: draft a proposal, halt at a human go/no-go gate, then
+  on go apply it — one command from idea to merged code.
   Triggers: /jj-openspec <verb> [change], "apply <change> on a jj workspace",
   "fan out apply across task groups", "draft a proposal in the background",
-  "propose/new/ff <change> with a jj worker". Requires: a jj repo (ideally
+  "propose/new/ff <change> with a jj worker", "/jj-openspec relay <idea>",
+  "draft then apply in one go". Requires: a jj repo (ideally
   colocated), the jj-concurrent plugin (jj-delegate + jj-workspace-worker),
   an openspec/ directory, and the opsx skills available in-session.
 metadata:
@@ -34,7 +37,15 @@ reconcile it:
 |---------|-------|--------------------------|----------------|
 | `apply` | **Implementing** | code changes + ticked tasks.md | integrate → `/opsx:verify` → issue-tracker update → `/jj-pr` push/PR |
 | `propose` / `new` / `ff` | **Authoring** | the change artifacts under `openspec/changes/<name>/` (proposal/design/specs/tasks) | surface artifacts for review; bookmark only; **no verify, no merge-to-main** (nothing is implemented yet) |
+| `relay` | **Composite** (authoring-leg → human gate → implementing-leg) | first the authoring artifacts, then — only on a human *go* — the implementing code + ticked tasks.md | the **authoring** tail (validate + surface) at the gate, then on go the **implementing** tail (integrate → verify → push/PR); see §6 |
 | `explore` | **Interactive** | (a thinking partner — file output only when asked) | NOT a default background candidate. Only background as "autonomous exploration → a written findings doc" when the user explicitly asks. Otherwise run it inline, not via a worker. |
+
+`relay` is **not a new shape** — it is a *composition* of the two existing
+shapes. Each leg dispatches the same shape the corresponding single-shape verb
+already uses: the first leg is the authoring shape exactly as `propose`/`new`/`ff`
+run it, and the second leg is the implementing shape exactly as `apply` runs it.
+The relay owns **only** the ordering of the two legs and the human go/no-go gate
+between them; it adds no shape-internal behaviour. Full flow in §6.
 
 The **implementing (`apply`)** shape supports two **distributions**:
 
@@ -319,14 +330,79 @@ already integrated the lone worker onto the change branch.)
 3. Report: change name, the artifacts created, validate outcome, and the
    natural next step (`/jj-openspec apply <name>` once the proposal is agreed).
 
+## 6. Relay flow (`relay` only — author → gate → apply, one command)
+
+`/jj-openspec relay <idea>` is the single entry point for the most common real
+workflow: *draft this, let me look, then build it.* It chains the **existing**
+authoring and implementing shapes with a **mandatory human go/no-go gate**
+between them. The relay owns only the composition (which leg runs when) and the
+gate (the pause between legs): it adds **no** new jj/workspace choreography (that
+stays jj-delegate's) and **no** new OpenSpec artifact rules (those stay the opsx
+skills'). Each leg dispatches its shape *unchanged* — the relay touches neither.
+
+### 6a. First leg — authoring
+
+Dispatch the authoring shape **exactly as `/jj-openspec propose` does** (§4a with
+the authoring tail of §5): a worker runs `/opsx:propose` (or `new`/`ff`) on its
+own revision, drafts the change artifacts under `openspec/changes/<name>/`,
+validates, and surfaces them — **no verify, no merge** (nothing is implemented
+yet). The relay does not reimplement authoring; it composes that shape.
+
+The authoring leg's report **must carry the proposal revision** — the
+change-id / revision the artifacts were drafted on — so the gate can thread it
+to the implementing leg without re-prompting the human. (Read it from the
+worker's structured report field, falling back to `jj log` for the drafted
+change if the report omits it.)
+
+### 6b. The human go/no-go gate (hard halt — never auto-advance)
+
+After the authoring leg reports, the binding **halts and surfaces the drafted
+artifacts** (the §5 authoring surface + its `openspec validate` result) for an
+explicit human go/no-go. It **SHALL NOT auto-advance** to the implementing leg:
+nothing is built without a sign-off. This is the whole point of the workflow.
+
+- **Go** → proceed to the implementing leg (§6c).
+- **No-go** → end the relay. Dispatch **no** implementing leg. Leave the proposal
+  revision **intact** for the human to revise or discard — the relay itself
+  **deletes nothing**. (A no-go is not a discard.)
+- **Never decided** → the relay simply stays parked at the gate, proposal
+  revision intact; nothing is built and nothing is lost. No timeout / auto-advance
+  exists (a non-goal).
+
+### 6c. Second leg — implementing, seeded from the proposal revision
+
+On **go**, dispatch the implementing shape **exactly as `/jj-openspec apply
+<change>` does** (§4 distribution + the §5 verify → push/PR tail): integrate →
+`/opsx:verify` → issue-tracker update → `/jj-pr`.
+
+The implementing leg is **based on the approved proposal revision** via the
+binding's *existing* apply-worker-base rule (§3 apply: seed-intent — the worker's
+workspace starts from the revision that carries the drafted artifacts, with **no
+seed commit**). The relay reuses that rule; it introduces no separate seeding
+mechanism. The base revision is **resolved from the authoring leg's reported
+result** (§6a), not re-supplied by the human at the gate — removing exactly the
+re-derive-the-base-by-hand friction this flow exists to eliminate. (If the human
+revised the draft after the authoring leg reported, they re-run the relay or a
+standalone `apply` against the new revision; the relay does not silently
+re-resolve a moving target.)
+
+### 6d. Relay is additive — existing verbs unchanged
+
+`relay` is added **alongside** `propose`/`new`/`ff`/`apply`/`explore`; it changes
+none of them. Each existing verb keeps its single mapped shape exactly as before,
+with **no gate and no composition** — they have no gate, and `relay` adds none to
+them. No existing verb's mapping, reconcile tail, or (absent) gate changes. The
+relay is an additional trigger, not a modification of the existing single-shape
+triggers.
+
 ## Variants
 
 - **Background** is the default (the session stays free; another `/jj-openspec`
   or `/jj-delegate` can run a second independent slice concurrently).
 - **Foreground** ("and wait") — passes through to jj-delegate's foreground mode.
-- **Relay** (author then apply): run `/jj-openspec propose <name>`; once the
-  proposal is agreed, run `/jj-openspec apply <name>` — the apply worker bases
-  on the revision the authoring run produced.
+- **Relay** (author → gate → apply, one command): `/jj-openspec relay <idea>`
+  drafts a proposal, halts at a human go/no-go gate, then on go applies it —
+  the apply leg bases on the proposal revision automatically. See §6.
 
 ## Worked example: two disjoint groups fanned out into one branch
 
