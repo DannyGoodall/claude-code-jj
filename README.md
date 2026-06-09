@@ -20,7 +20,7 @@ This is the jj successor to a Graphite/git-worktree orchestration.
 
 | Plugin | What it adds |
 |--------|--------------|
-| **`jj-concurrent`** | The core. Skills: **`jj-delegate`** (orchestrator/worker lifecycle), **`jj-fleet`** (one at-a-glance status view of all in-flight workers), **`jj-pr`** (push a bookmark + create/update its GitHub PR — the "submit" jj lacks). Plus the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores). Workflow-agnostic. |
+| **`jj-concurrent`** | The core. Skills: **`jj-delegate`** (orchestrator/worker lifecycle), **`jj-fleet`** (one at-a-glance status view of all in-flight workers), **`jj-pr`** (push a bookmark + create/update its GitHub PR — the "submit" jj lacks), **`jj-stacked-pr`** (one based PR per bookmark from a stitched stack), **`jj-absorb`** (amend-after-review: distribute scattered hunks into their downstack commits), **`jj-checkpoint`** / **`jj-rewind`** (record a named op-log save point before a risky step, then roll back to it). Plus the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores; also enforces the orchestrator-only rule — a worker may not run `jj bookmark`/`jj git push`). Workflow-agnostic. |
 | **`jj-concurrent-openspec`** | `jj-openspec` skill — backgrounds an OpenSpec verb (`apply` / `propose` / `new` / `ff`) in its own jj workspace, mapping verb → shape → reconcile tail. `apply` can **fan out** across a change's separable `tasks.md` groups — one workspace per group, reconciled into one branch. Enable only in OpenSpec repos. |
 | **`jj-concurrent-linear`** | `jj-linear` skill — Linear binding over the orchestrator: at the reconcile point, maps each worker's structured JSON report to its Linear sub-issue (in-progress → done on a clean finish, blocker/conflict comment otherwise). Separate, separately-enabled binding; enable only in Linear-tracked repos (requires a configured Linear MCP server). |
 
@@ -104,27 +104,30 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.2.0** · jj-concurrent-openspec v0.1.0 · jj-concurrent-linear v0.1.0
+**jj-concurrent v0.3.0** · jj-concurrent-openspec v0.1.0 · jj-concurrent-linear v0.1.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
 The v0.1.x evaluation arc (substrate, single/concurrent workers, same-file
-conflict, colocated jj-on-git, the cwd-aware guard, the `/jj-openspec` relay) is
-complete — see the Validation table above. **v0.2.0** adds, on top of that base:
+conflict, colocated jj-on-git, the cwd-aware guard, the `/jj-openspec` relay) and
+**v0.2.0** (`/jj-fleet`, `/jj-pr`, the OpenSpec apply fan-out, the
+`jj-concurrent-linear` binding) are complete — see the Validation table above.
 
-- **`/jj-fleet`** — one read-only status view across all live workspaces (snapshots siblings first so it is never stale).
-- **`/jj-pr`** — push a bookmark and create/update its GitHub PR; wired into both reconcile tails as the submit step.
-- **OpenSpec apply fan-out** — `/jj-openspec apply` can split a change across its separable `tasks.md` groups, one workspace per group, reconciled into one branch.
-- **`jj-concurrent-linear`** — a third, separately-enabled plugin binding worker reports to Linear sub-issues at reconcile time.
+**v0.3.0** adds four features, applied concurrently by the plugin's own workers
+and reconciled in one stack (see
+[the fan-out case study](docs/case-studies/fleet-fanout-2026-06-09.md)):
 
-The guard still enforces the universal safety floor (no raw mutating git, no
+- **`/jj-stacked-pr`** — derive the parent chain from a stitched jj stack and open/update one PR per bookmark, each based on its parent (true stacked PRs).
+- **`/jj-absorb`** — amend-after-review: preview with `jj absorb --dry-run`, distribute scattered working-copy hunks into their downstack commits, report where each landed.
+- **`/jj-checkpoint` + `/jj-rewind`** — record a named op-log save point before a risky integration, then roll the whole repo back to it via `jj op restore`.
+- **Guard role enforcement** — the guard hook now blocks `jj bookmark`/`jj git push` from a worker workspace (the orchestrator-only rule, previously contract-only), while still allowing them in the orchestrator's primary workspace.
+
+The guard enforces the universal safety floor (no raw mutating git, no
 interactive jj, no `rm` on the VCS store) inside jj repos for both roles, with
-cwd-aware repo detection; role-specific enforcement (bookmarks/push are
-orchestrator-only) is carried by the worker-agent contract.
+cwd-aware repo detection, **plus** the worker bookmark/push restriction above.
 
 **What's next** is captured as OpenSpec proposals — see [ROADMAP.md](ROADMAP.md).
 Deliberately deferred (see [DESIGN.md](DESIGN.md) "Open questions"):
-workspace-based role detection *in* the guard, sparse-workspace partitions
-(`--sparse-patterns`), and smarter guard matching (it currently matches git/jj
-*mentions* in a command string, and `git -C <dir>` slips past — the worker
-contract is the primary line, the guard a backstop).
+sparse-workspace partitions (`--sparse-patterns`) and smarter guard matching (it
+currently matches git/jj *mentions* in a command string, and `git -C <dir>`
+slips past — the worker contract is the primary line, the guard a backstop).
