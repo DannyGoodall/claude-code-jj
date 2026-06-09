@@ -12,7 +12,7 @@ description: |
   colocated), the jj-concurrent plugin (jj-delegate + jj-workspace-worker),
   an openspec/ directory, and the opsx skills available in-session.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   author: outfitter-style
 ---
 
@@ -84,6 +84,103 @@ seed-commit ceremony — see jj-delegate §3):
 - **propose/new/ff**: base on trunk; the worker CREATES the artifacts in its
   workspace.
 
+## 3.5 Pre-flight health check (gate before hand-off)
+
+After parameters are resolved (§1–§3) and **before** any hand-off to
+`jj-delegate` (§4) or fan-out detection (§A), the binding runs a pre-flight
+**health check** in the orchestrator's primary workspace. Its job: catch a
+malformed *existing* change before a workspace is provisioned, and surface real
+errors that the opsx CLI otherwise buries in harmless stderr noise. The check
+**provisions nothing, mutates no jj state, moves no bookmark, and pushes
+nothing** — it only reads/validates artifacts and runs CLI calls
+non-interactively (no `-i`, no editor, `--no-pager` where applicable).
+
+### Step 1 — Decide the shape (gate vs no-op)
+
+Key off whether the resolved change directory **already exists** at
+`openspec/changes/<change>/` on the base revision:
+
+- **Existing-change verbs** (`apply`, `verify`, `archive`, `continue`, and
+  `ff` when the directory **exists**) → **hard gate**: run the validation below;
+  a non-zero filtered result aborts dispatch.
+- **New-change verbs** (`propose`, `new`, and `ff` when the directory does
+  **not** exist) → **no-op**: there is nothing to validate yet. Record
+  "health check skipped (new change)" and proceed straight to §4. Do **not**
+  run `openspec validate` against a non-existent change (that would surface a
+  spurious "change not found" blocker on the very verbs whose job is to create
+  it).
+
+`ff` is the ambiguous case: the directory's existence — not the verb name —
+decides gate-vs-skip.
+
+### Step 2 — Validate through the noise-filtering wrapper
+
+For a gated verb, run `openspec validate <change>` **through the wrapper**
+(below) and read the *filtered* output and the *preserved* exit code.
+
+**CLI preflight.** Before validating, confirm the `openspec` CLI is on PATH
+(e.g. `command -v openspec`). If it is **absent**, do not attempt validation:
+emit a distinct **"openspec CLI not found"** blocker (its own failure class,
+never reported as a malformed change) and abort dispatch.
+
+**The noise-filtering wrapper.** Wrap every `openspec`/opsx CLI invocation so
+that:
+
+- stderr lines matching the explicit allow-list (below) are **dropped** from
+  the surfaced output;
+- every stderr line **not** on the allow-list passes through **unchanged**
+  (fail open — a novel warning is shown, never silently swallowed);
+- the process **exit code is preserved verbatim** — filtering never alters it,
+  so a real non-zero failure is never masked even when its only stderr lines
+  happen to be on the allow-list.
+
+The **allow-list** is an explicit, named set of patterns anchored to the
+specific known-harmless opsx schema-config phrases — specific enough that a
+genuine error line is never matched:
+
+| Name | Anchored phrase (substring/regex, case-sensitive on the literal) |
+|------|------------------------------------------------------------------|
+| `tasks-rules-not-array` | `Rules for 'tasks' must be an array` |
+| `unknown-artifact-id-in-rules` | `Unknown artifact ID in rules` |
+
+This is the one documented place the allow-list lives; the filter fails **open**
+(unknown line shown) rather than **closed**, so allow-list drift produces
+visible noise rather than hidden errors. A concrete shell realisation of the
+wrapper (used non-interactively):
+
+```bash
+# run an openspec/opsx command, drop only known-harmless stderr, keep exit code
+opsx_filtered() {
+  command -v openspec >/dev/null 2>&1 || {
+    echo "BLOCKER: openspec CLI not found on PATH" >&2; return 127; }
+  local err; err="$( { "$@" 2>&1 1>&3 3>&-; } 3>&1 )"; local code=$?
+  printf '%s\n' "$err" \
+    | grep -v -e "Rules for 'tasks' must be an array" \
+              -e "Unknown artifact ID in rules" >&2
+  return $code
+}
+# usage: opsx_filtered openspec validate <change> --no-pager
+```
+
+(The agent may instead apply the same allow-list/exit-code discipline inline —
+the table above is the source of truth, not this snippet.)
+
+### Step 3 — Act on the result
+
+- **Filtered exit code zero** → health check **passes**. Proceed to §A / §4 and
+  hand the verb invocation to `jj-delegate` **unchanged**.
+- **Filtered exit code non-zero** → **abort dispatch** and emit a single
+  operator-facing **blocker**, distinct in form from a worker-execution failure
+  so the operator can tell "malformed change" from "worker errored". The blocker
+  contains:
+  1. the **change name**;
+  2. the **noise-filtered validation output** (the genuine errors, with the
+     known-harmless lines already stripped);
+  3. the instruction: **"fix the change artifacts and re-dispatch"**.
+
+  No workspace is provisioned, no bookmark moves, nothing is pushed — the
+  binding stops here and reports the blocker.
+
 ## A. Separability detection (apply only — picks the distribution)
 
 Before dispatch, the `apply` shape decides **single-worker vs fan-out** by
@@ -124,6 +221,12 @@ is a tunable knob, and any ambiguity resolves to single-worker.
 
 Invoke the `jj-delegate` skill. The shape from §1 and the distribution from §A
 decide whether you hand off **one** workload or **several concurrent siblings**.
+
+This step runs **only after the pre-flight health check (§3.5) has passed or
+been skipped** — a gated, malformed change never reaches hand-off; it stops at
+the §3.5 blocker with no workspace provisioned. The check adds this gate to the
+existing dispatch path; it does **not** change how verbs map to shapes (§1) or
+how `jj-delegate` choreographs workspaces.
 
 ### 4a. Single-worker distribution (default / fallback — all verbs)
 
