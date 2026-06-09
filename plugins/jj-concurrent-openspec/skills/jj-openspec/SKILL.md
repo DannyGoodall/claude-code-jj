@@ -32,7 +32,7 @@ reconcile it:
 
 | Verb(s) | Shape | What the worker produces | Reconcile tail |
 |---------|-------|--------------------------|----------------|
-| `apply` | **Implementing** | code changes + ticked tasks.md | integrate → `/opsx:verify` → issue-tracker update → push/PR |
+| `apply` | **Implementing** | code changes + ticked tasks.md | integrate → `/opsx:verify` → issue-tracker update → `/jj-pr` push/PR |
 | `propose` / `new` / `ff` | **Authoring** | the change artifacts under `openspec/changes/<name>/` (proposal/design/specs/tasks) | surface artifacts for review; bookmark only; **no verify, no merge-to-main** (nothing is implemented yet) |
 | `explore` | **Interactive** | (a thinking partner — file output only when asked) | NOT a default background candidate. Only background as "autonomous exploration → a written findings doc" when the user explicitly asks. Otherwise run it inline, not via a worker. |
 
@@ -200,9 +200,11 @@ already integrated the lone worker onto the change branch.)
    the worker's commits; jj makes them visible without a checkout dance).
 2. If the project links changes to an issue tracker (e.g. a Linear umbrella
    issue per change), update it with the push/PR link and status.
-3. Push / open the PR (`jj git push -b <bookmark>` + `gh pr create`, or your
-   forge flow). Report: change, bookmark, PR, verify outcome, remaining
-   unticked tasks.
+3. Run the push-and-PR step [`/jj-pr <bookmark>`](../../../jj-concurrent/skills/jj-pr/SKILL.md):
+   it pushes the bookmark (`jj git push -b <bookmark>`, handling one-time
+   `jj bookmark track`) and creates-or-updates the GitHub PR via `gh`, sourcing
+   the body from this change's `openspec/changes/<name>/proposal.md`. Report:
+   change, bookmark, PR, verify outcome, remaining unticked tasks.
 
 **Authoring (`propose`/`new`/`ff`)**, in the primary workspace:
 

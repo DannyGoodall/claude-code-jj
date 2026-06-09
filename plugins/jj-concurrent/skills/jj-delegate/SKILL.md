@@ -113,8 +113,10 @@ jj makes this the easy part — **integration never halts**.
    onto trunk. **A jj rebase always succeeds** — if there are conflicts they
    are recorded as first-class objects in the resulting commits, NOT a blocked
    pipeline. Resolve any conflicts deliberately (edit markers; never the
-   interactive `jj resolve`), then push: `jj git push -b <bookmark>` (or open a
-   PR with `gh`).
+   interactive `jj resolve`), then run the push-and-PR step:
+   [`/jj-pr <bookmark>`](../jj-pr/SKILL.md) — it pushes the bookmark
+   (`jj git push -b <bookmark>`, handling one-time `jj bookmark track`) and
+   creates-or-updates the GitHub PR via `gh` with a generated body.
 4. **Tear down the workspace** to keep state minimal (the geirsson principle —
    abandon dead workspaces aggressively):
    ```bash
