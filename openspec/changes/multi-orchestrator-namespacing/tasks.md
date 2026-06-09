@@ -21,10 +21,10 @@
 
 ## 4. Union fleet view (jj-fleet)
 
-- [ ] 4.1 Discover all manifests in the repo: every `.jj-agent-plan.<session-id>.json` plus the default `.jj-agent-plan.json`
-- [ ] 4.2 Union the manifests' slices and join onto live workspaces by path, with per-session attribution on each row
-- [ ] 4.3 Apply the read-only staleness exclusion: omit or visibly demote slices from manifests past the TTL or marked session-ended (never delete a manifest)
-- [ ] 4.4 Preserve graceful degradation: derive the workspace set from `jj workspace list` and mark manifest-only fields (status, blocker, workload, owning session) as unknown when no/partial manifest coverage exists
+- [x] 4.1 Discover all manifests in the repo: every `.jj-agent-plan.<session-id>.json` plus the default `.jj-agent-plan.json`
+- [x] 4.2 Union the manifests' slices and join onto live workspaces by path, with per-session attribution on each row
+- [x] 4.3 Apply the read-only staleness exclusion: omit or visibly demote slices from manifests past the TTL or marked session-ended (never delete a manifest)
+- [x] 4.4 Preserve graceful degradation: derive the workspace set from `jj workspace list` and mark manifest-only fields (status, blocker, workload, owning session) as unknown when no/partial manifest coverage exists
 
 ## 5. Back-compat and verification
 
