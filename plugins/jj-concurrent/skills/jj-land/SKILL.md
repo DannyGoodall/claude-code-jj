@@ -4,12 +4,16 @@ description: |
   Land a stack of GitHub PRs bottom-up in one orchestrator step — the jj analog
   of Graphite's `gt merge`. Given a jj stack whose changes already have open
   GitHub PRs, it derives the merge order from the jj stack itself (trunk upward),
-  then for each PR in turn waits for required CI, merges it (`gh pr merge`,
-  default `--squash`, never `--admin`/force; success judged by PR state, not exit
-  code), retargets the next-up PR's base to trunk via `gh pr edit --base`, and
-  continues up the stack. A red required check or a per-PR wait-timeout aborts the
-  rest of the stack cleanly, leaving merged PRs merged and the un-reached tail
-  open. After the loop it runs a single cleanup pass: `jj git fetch` to sync local
+  then for each PR in turn waits until it is actually mergeable (required CI AND
+  GitHub's mergeStateStatus/mergeable verdict — never merging against UNKNOWN),
+  merges it (`gh pr merge`, default `--merge` for a multi-PR stack / `--squash`
+  for a single PR, never `--admin`/force; success judged by PR state, not exit
+  code), retargets the next-up PR's base to trunk via `gh pr edit --base`, and —
+  if a rewriting method (`--squash`/`--rebase`) was chosen for a stack — restacks
+  the un-merged tail (`jj git fetch` + `jj rebase` onto trunk + `jj git push`) so
+  shared-file uppers don't cascade-conflict, then continues up the stack. A red
+  required check or a per-PR wait-timeout aborts the rest of the stack cleanly,
+  leaving merged PRs merged and the un-reached tail open. After the loop it runs a single cleanup pass: `jj git fetch` to sync local
   trunk, delete the merged bookmarks AND their remote branches, and forget any
   stale linked workspaces via jj-delegate Teardown. Re-running resumes from the
   first still-open PR. Triggers: /jj-land,
@@ -157,18 +161,24 @@ to disappear underneath it. Order is read from jj (§2.1), not from PR metadata.
 
 ## 3. Per-PR CI wait (poll with timeout, gated on GitHub's verdict)
 
-For each not-yet-merged PR in turn, **wait for its required checks before
-merging**. Poll on the configured interval until GitHub reports the required
-checks succeeded:
+For each not-yet-merged PR in turn, **wait until it is actually mergeable before
+merging** — that means BOTH its required checks AND GitHub's mergeability
+verdict. Poll on the configured interval:
 
 ```bash
 gh pr checks <pr> --json bucket,state,name             # per-check buckets
-gh pr view  <pr> --json statusCheckRollup,mergeStateStatus,state
+gh pr view  <pr> --json statusCheckRollup,mergeStateStatus,mergeable,state
 ```
 
-- **Required checks all `pass` / rollup success** → proceed to merge (§4).
-- **Still pending/running** → sleep `--poll-interval` and poll again, bounded by
-  `--timeout` (§3.3). Do NOT loop indefinitely.
+- **Ready** — `mergeable=MERGEABLE` and `mergeStateStatus ∈ {CLEAN, UNSTABLE}`
+  (UNSTABLE = mergeable, only non-required checks pending) and required checks
+  pass → proceed to merge (§4).
+- **Not ready** — required checks still pending/running, OR
+  `mergeStateStatus=UNKNOWN` (GitHub is still **recomputing mergeability** — e.g.
+  just after a base retarget or a tail re-push) → sleep `--poll-interval` and
+  poll again, bounded by `--timeout` (§3.3). Do NOT loop indefinitely, and
+  **never merge against `UNKNOWN`**: with no required CI the recompute is the
+  only thing to wait for, and merging early simply no-ops, leaving the PR open.
 
 ### 3.1 Use a bounded, non-interactive poll
 
@@ -199,13 +209,17 @@ A re-run after a fix resumes from the first still-open PR (§2.3).
 
 ### 4.1 Merge the gated PR (no force, no admin)
 
-Once the PR's required checks pass, merge it with the configured method —
+Once the PR is mergeable (§3), merge it with the configured method —
 **without** `--delete-branch` (branch removal is done explicitly in §5.2):
 
 ```bash
-gh pr merge <pr> --squash                         # --method default: squash
-#   or --merge / --rebase per --method; NEVER --admin, NEVER force
-#   NOTE: no --delete-branch — see the colocated gotcha below
+# Default method: --merge for a MULTI-PR stack, --squash for a single-PR land.
+# --merge preserves each PR's commit identity, so once a lower PR merges an upper
+# PR's already-merged lower commits are recognised and it shows only its OWN diff
+# — no shared-file re-conflict (see §4.5). An explicit --method always overrides.
+gh pr merge <pr> --merge                          # multi-PR stack default
+#   single-PR land: --squash; --squash/--rebase on a stack ⇒ restack (§4.5)
+#   NEVER --admin, NEVER force; NEVER --delete-branch (colocated gotcha below)
 ```
 
 Then **confirm the merge by PR state, not by the command's exit code**:
@@ -259,6 +273,33 @@ deleted parent branch.
 For the final report (§6), record per PR: its outcome —
 `merged` / `waiting-timed-out` / `checks-red` / `blocked` — and, for each PR
 whose base was retargeted, the **base value set** (e.g. `feat/api → main`).
+
+### 4.5 Restack the tail after a rewriting merge (shared-file stacks)
+
+A **rewriting** merge method (`--squash`, `--rebase`) collapses the merged PR
+into a *new* trunk commit; the PRs above still carry the original commits. When a
+lower PR **shares a file** with an upper one, the upper PR then goes
+`CONFLICTING`/`DIRTY` against trunk — git cannot reconcile the squashed trunk
+with the branch's un-squashed history. Retargeting the base (§4.3) does **not**
+fix this; the branch *content* is stale. (This is why `--merge` is the default
+for a multi-PR stack — merge commits preserve identity and never trigger it.)
+
+So when a rewriting method is used on a multi-PR stack, after each merge —
+**before** considering the next PR — restack the still-un-merged tail onto the
+updated trunk and re-push it:
+
+```bash
+jj git fetch --no-pager                                  # pull the merged commit onto trunk
+jj rebase -s <next-bookmark> -d <trunk>                  # jj rebases by change-diff →
+                                                         #   a shared-file change re-applies cleanly
+jj git push -b <each remaining tail bookmark> --no-pager # update the open PRs to clean commits
+```
+
+This rewrites **only the orchestrator-owned, un-merged tail bookmarks** — never a
+merged change's bookmark, never a branch outside the stack, and it is not a
+force-*merge*. After the restack, re-derive the next PR's mergeability (§3) — it
+is now clean against trunk — then merge it. Skip this whole step under `--merge`
+(no rewrite, no cascade) and for a single-PR land (no tail).
 
 ## 5. Post-merge cleanup (one tail pass, merged-only)
 
@@ -318,6 +359,8 @@ Return a compact, ordered result the reconcile tail can surface:
 - **Per-PR outcome list**, bottom → top: each `bookmark → PR → outcome`, where
   outcome is `merged` / `waiting-timed-out` / `checks-red` / `blocked` /
   `skipped-already-merged`, plus the **base value set** for each retargeted PR.
+- **Restack actions** (only under a rewriting method on a stack): which tail
+  bookmarks were rebased onto trunk and re-pushed after each merge (§4.5).
 - **Where the run stopped**, if it aborted: the stopping PR and the reason
   (`checks-red`, `waiting-timed-out`, `blocked`).
 - **Cleanup summary**: trunk fetched (yes/no), the bookmarks deleted, the remote

@@ -104,7 +104,7 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.6.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
+**jj-concurrent v0.6.1** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
@@ -150,6 +150,12 @@ provisioning** (seed a worker's gitignored files from the `.worktreeinclude` /
 `.claude/settings.json` declaration instead of ad-hoc `cp`), and **optional
 sparse partitions** (`jj workspace add --sparse-patterns` so a worker's tree
 materialises only its lane — hard file-ownership).
+
+**v0.6.1** (`jj-land-stack-restack`) completes the `/jj-land` family: it waits for
+**mergeability** (not just CI) before each merge, defaults to **`--merge`** for
+multi-PR stacks, and **restacks+repushes** the tail after a rewriting merge — so a
+stack whose PRs share a file lands without cascade-conflicts. (Found while landing
+#16–#19, which needed a manual restack; now encoded in the skill.)
 
 The guard enforces the universal safety floor (no raw mutating git, no
 interactive jj, no `rm` on the VCS store) inside jj repos for both roles, with
