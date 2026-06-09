@@ -29,7 +29,7 @@ detail; this skill owns only the orchestration.
 
 | Role | Where | Owns |
 |------|-------|------|
-| **Orchestrator** | primary/default workspace | workspace add/forget, **all** `jj bookmark` + `jj git push` + ref ops, integration, the agent-plan manifest, issue tracker |
+| **Orchestrator** | primary/default workspace | workspace add/forget, **all** `jj bookmark` + `jj git push` + ref ops, integration, its own per-session agent-plan manifest (§3), issue tracker |
 | **Worker** | one jj workspace each | edits + shaping its own commits (`jj new`/`jj describe -m`). Never bookmarks, never pushes, never raw mutating git. |
 
 ## 1. Resolve parameters (infer first, ask only on ambiguity)
@@ -75,8 +75,43 @@ install dependencies / copy gitignored env files the workload needs
 (`cp .env.local ../wt-<slug>/` etc.). If the workload runs the app, assign it
 a distinct port and put that in the dispatch brief.
 
-Write the manifest `.jj-agent-plan.json` at the repo root (gitignored) with
-the slice(s): bookmark, workspace, base-rev, status, workload.
+**Resolve the manifest path (per session).** Before touching any manifest,
+resolve a stable **session-id token** for this orchestrator session and route
+every manifest read/write through the per-session path it implies:
+
+- **Session-id token** — slugify the orchestrator's own session/agent id to a
+  filesystem- and ref-safe token: lowercase, `[a-z0-9-]` only (collapse any
+  other run to a single `-`), trimmed of leading/trailing `-`, bounded to a
+  short length (≈24 chars; if longer, truncate and keep enough to stay unique
+  for this session). The token MUST be **deterministic** — the same session id
+  always slugifies to the same token, so a resumed session resolves the same
+  path and re-attaches to its existing manifest.
+- **Per-session manifest path** — `.jj-agent-plan.<session-id>.json` at the
+  repo root (gitignored). This session reads and writes ONLY this file; it
+  never reads or writes another session's `.jj-agent-plan.*.json`.
+- **Back-compat fallback** — when no session id is resolvable (the lone
+  single-orchestrator case), fall back to the unnamespaced default path
+  `.jj-agent-plan.json`, exactly as before. An existing repo carrying a plain
+  `.jj-agent-plan.json` keeps working with no migration. Throughout this skill,
+  "the manifest" means this resolved path (per-session when a session id
+  exists, default otherwise).
+
+Write the manifest at the resolved path (per §3's session-id resolution;
+gitignored) with the slice(s): bookmark, workspace, base-rev, status, workload.
+Also record the **liveness marker** so other tooling can judge staleness:
+`session` (the owning session-id token, or `null` in the back-compat default
+path) and `heartbeat` (an ISO-8601 timestamp). **Refresh the `heartbeat` on
+every manifest write** as you operate (provision, dispatch, reconcile,
+teardown), so a live session's manifest always carries a fresh timestamp and a
+dead session's goes stale. The manifest's top-level shape is therefore:
+
+```jsonc
+{
+  "session": "<session-id-token-or-null>",  // owning session (liveness marker)
+  "heartbeat": "<ISO-8601 timestamp>",       // refreshed on every write
+  "slices": [ /* bookmark, workspace, base-rev, status, workload, blocker */ ]
+}
+```
 
 ## 4. Dispatch worker(s)
 
@@ -149,7 +184,9 @@ jj makes this the easy part — **integration never halts**.
    jj workspace forget <workspace-name>
    rm -rf ../wt-<slug>            # the directory only — NEVER the repo .jj
    ```
-   Update then delete the manifest entry.
+   Update then delete the slice entry in the resolved manifest (the
+   per-session `.jj-agent-plan.<session-id>.json`, or the default path in the
+   back-compat case), refreshing the `heartbeat` on that write.
 5. Report to the user: bookmark, change-ids, PR/push outcome, test result,
    any conflicts surfaced.
 

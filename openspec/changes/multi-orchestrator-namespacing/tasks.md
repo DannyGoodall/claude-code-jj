@@ -1,9 +1,9 @@
 ## 1. Session identity and manifest namespacing
 
-- [ ] 1.1 Resolve a stable, filesystem- and ref-safe session id token for the orchestrator (slugified session identity, bounded length), deterministic across resume
-- [ ] 1.2 Compute the manifest path `.jj-agent-plan.<session-id>.json`, falling back to the unnamespaced `.jj-agent-plan.json` when no session id is resolvable
-- [ ] 1.3 Route all orchestrator manifest reads/writes (slices, status, blockers, checkpoints) through the resolved per-session path
-- [ ] 1.4 Add a liveness marker to the manifest schema (owning session id + heartbeat timestamp) and refresh the heartbeat as the orchestrator operates
+- [x] 1.1 Resolve a stable, filesystem- and ref-safe session id token for the orchestrator (slugified session identity, bounded length), deterministic across resume
+- [x] 1.2 Compute the manifest path `.jj-agent-plan.<session-id>.json`, falling back to the unnamespaced `.jj-agent-plan.json` when no session id is resolvable
+- [x] 1.3 Route all orchestrator manifest reads/writes (slices, status, blockers, checkpoints) through the resolved per-session path
+- [x] 1.4 Add a liveness marker to the manifest schema (owning session id + heartbeat timestamp) and refresh the heartbeat as the orchestrator operates
 
 ## 2. Per-orchestrator workspace and bookmark naming
 
