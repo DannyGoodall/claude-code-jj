@@ -104,7 +104,7 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.6.1** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.2.0
+**jj-concurrent v0.7.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.3.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
@@ -179,8 +179,30 @@ at dispatch, thread their IDs into the manifest) and `jj-linear-reconcile-summar
 (a four-section umbrella summary + a human-gate sub-issue at reconcile). Landed as
 the shared-file 2-PR stack that validated `/jj-land`'s stack-restack fix.
 
+**v0.7.0** — the jj-native stack & history batch, two new orchestrator skills:
+**`/jj-pr-fixup <pr>`** (read an open PR's review comments, fix them in a
+workspace based on the PR head, absorb each fix into the commit it belongs to via
+`/jj-absorb`, and re-push — the amend-after-review loop end-to-end) and
+**`/jj-keep-current`** (detect trunk moved, fetch + rebase the stack, re-check CI,
+and gate landing behind a green required-checks signal so a stale-but-green PR
+never lands).
+
+**`jj-concurrent-linear` v0.3.0** — the binding's **inbound** half, closing the
+board↔fan-out loop: **`/jj-from-linear <issue>`** (one command from a triaged
+`ready-for-agent` issue to a dispatched `jj-delegate` worker, with the bookmark
+and PR/change back-link derived deterministically from the issue) and
+**`/jj-burndown`** (drain a board's `ready-for-agent` issues as a bounded
+sliding-window stream of concurrent jj workers, updating each issue as its worker
+lands — the board becomes a work queue with jj as the engine).
+
+v0.7.0 and linear v0.3.0 shipped together: **all four remaining roadmap proposals
+applied in one 4-worker fan-out**. Because each change added its own new skill
+file, the four worker branches were fully disjoint — reconciled by the
+orchestrator into a clean 3-PR stack (jj-concurrent skills / linear skills / docs)
+and landed via `/jj-land` with no cascade. The ROADMAP backlog is now empty.
+
 **What's next** is captured as OpenSpec proposals — see [ROADMAP.md](ROADMAP.md).
 Deliberately deferred (see [DESIGN.md](DESIGN.md) "Open questions"):
-sparse-workspace partitions (`--sparse-patterns`) and smarter guard matching (it
+smarter guard matching (it
 currently matches git/jj *mentions* in a command string, and `git -C <dir>`
 slips past — the worker contract is the primary line, the guard a backstop).
