@@ -22,6 +22,17 @@ with every other workspace. Your edits are physically isolated — other agents
 cannot see or clobber your files — but the commits you make are instantly
 visible to the orchestrator.
 
+**Your tree may be deliberately sparse.** The orchestrator may have provisioned
+your workspace with a *sparse partition* — only the paths in your declared lane
+materialise on disk; files outside it are intentionally not checked out. Treat
+the absence of out-of-partition files as **expected**, never as a missing-file
+error or a broken checkout: it is the structural boundary of your lane. Never
+reshape your own sparse scope to pull in more files — no `jj sparse edit` (it is
+interactive and blocked anyway), and do not `jj sparse set` to widen your tree.
+Only the orchestrator owns provisioning. If you genuinely need a file outside
+your partition to do the job, STOP and report exactly which path and why — let
+the orchestrator widen the partition; do not improvise across the repo.
+
 ## Your contract
 
 - Work ONLY in the workspace path you were given. Never touch the primary
