@@ -7,17 +7,17 @@
 
 ## 2. Per-orchestrator workspace and bookmark naming
 
-- [ ] 2.1 Derive a stable per-session prefix from the session id (reproduced on resume)
-- [ ] 2.2 Apply the prefix to workspace directory names (`../wt-<session-prefix>-<slug>`) when a session id is present
-- [ ] 2.3 Apply the prefix to bookmark names (`<session-prefix>-<slug>`) when a session id is present
-- [ ] 2.4 Preserve unprefixed workspace/bookmark names in the back-compat single-orchestrator (no session id) path
+- [x] 2.1 Derive a stable per-session prefix from the session id (reproduced on resume)
+- [x] 2.2 Apply the prefix to workspace directory names (`../wt-<session-prefix>-<slug>`) when a session id is present
+- [x] 2.3 Apply the prefix to bookmark names (`<session-prefix>-<slug>`) when a session id is present
+- [x] 2.4 Preserve unprefixed workspace/bookmark names in the back-compat single-orchestrator (no session id) path
 
 ## 3. Stale-state cleanup (orchestrator)
 
-- [ ] 3.1 Implement a startup sweep that scans sibling `.jj-agent-plan.*.json` manifests
-- [ ] 3.2 Implement the liveness/TTL check (heartbeat past threshold and/or explicit "session ended" marker, no live owner) to classify a manifest as stale
-- [ ] 3.3 Remove or archive provably stale manifests, leaving live sessions' manifests and all worker commits untouched
-- [ ] 3.4 Guarantee the sweep never reclaims a manifest whose owner still appears live (fresh heartbeat within TTL), even if idle
+- [x] 3.1 Implement a startup sweep that scans sibling `.jj-agent-plan.*.json` manifests
+- [x] 3.2 Implement the liveness/TTL check (heartbeat past threshold and/or explicit "session ended" marker, no live owner) to classify a manifest as stale
+- [x] 3.3 Remove or archive provably stale manifests, leaving live sessions' manifests and all worker commits untouched
+- [x] 3.4 Guarantee the sweep never reclaims a manifest whose owner still appears live (fresh heartbeat within TTL), even if idle
 
 ## 4. Union fleet view (jj-fleet)
 
