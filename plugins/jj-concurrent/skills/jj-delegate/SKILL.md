@@ -97,10 +97,41 @@ jj bookmark create <bookmark> -r @-             # create the worker's bookmark
                                                 # (orchestrator owns all bookmarks)
 ```
 
-Per-workspace environment is real: each workspace is its own directory, so
-install dependencies / copy gitignored env files the workload needs
-(`cp .env.local ../wt-<slug>/` etc.). If the workload runs the app, assign it
-a distinct port and put that in the dispatch brief.
+**Seed gitignored workload files declaratively.** Per-workspace environment is
+real: each workspace is its own directory, so `jj workspace add` carries only
+tracked/snapshotted content — the gitignored files a workload needs to build or
+test (env files like `.env.local`, local config, service credentials) are NOT
+carried. Do NOT copy them ad hoc, file by file. Instead, after `jj workspace
+add`, read the repository's **worktree-include declaration** — the same
+convention Claude Code uses to copy selected gitignored files into a newly
+commissioned git worktree — and copy exactly the paths it declares into the new
+workspace. Resolve the declaration deterministically, using the **first source
+present** (no merging across sources):
+
+1. a repository-root worktree-include file (`.worktreeinclude`, gitignore-style
+   newline-separated path globs), else
+2. the worktree copy-list key in `.claude/settings.json` (a `worktree`-namespaced
+   copy-list, e.g. `worktree.copyFiles`).
+
+Treat each declared entry as a **gitignore-style path glob resolved relative to
+the repo root**, and copy every matched file into the new workspace **preserving
+its path relative to the repo root** (so `config/local.env` lands at
+`<ws-dir>/config/local.env`). Apply these **safety bounds**:
+
+- only copy paths that resolve **inside the repo root** — never escape it;
+- never copy version-control internals (`.jj/`, `.git/`);
+- **report** any declared path that matches nothing (do not silently skip it),
+  so a missing required input surfaces here at provisioning rather than as a
+  confusing downstream runtime failure.
+
+**Fallback (no declaration):** when the repo has neither a `.worktreeinclude`
+file nor a `.claude/settings.json` worktree copy-list, fall back to copying the
+specific gitignored files the workload needs explicitly, exactly as before
+(`cp .env.local <ws-dir>/` etc.). The absence of a declaration MUST NOT block
+provisioning and MUST NOT regress existing flows.
+
+Then install dependencies as the workload requires. If the workload runs the
+app, assign it a distinct port and put that in the dispatch brief.
 
 **Resolve the manifest path (per session).** Before touching any manifest,
 resolve a stable **session-id token** for this orchestrator session and route
