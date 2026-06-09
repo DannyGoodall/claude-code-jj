@@ -104,7 +104,7 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.5.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
+**jj-concurrent v0.5.1** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.1.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
@@ -136,6 +136,12 @@ without clobbering the manifest or colliding on names. It was implemented via th
 first **within-a-change** fan-out: three workers each took a separable task group
 of the one change (session-id+manifest / naming+cleanup / fleet-union) and were
 reconciled into one branch.
+
+**v0.5.1** (`jj-land-colocated-cleanup`) fixes `/jj-land` under colocated jj:
+judge merge success by PR **state** (not the `gh pr merge` exit code, which fails
+on jj's detached git HEAD), drop `--delete-branch`, and **explicitly delete each
+merged PR's remote branch** in cleanup so no stragglers remain — found and fixed
+while landing the archive stack (#11–#14).
 
 The guard enforces the universal safety floor (no raw mutating git, no
 interactive jj, no `rm` on the VCS store) inside jj repos for both roles, with
