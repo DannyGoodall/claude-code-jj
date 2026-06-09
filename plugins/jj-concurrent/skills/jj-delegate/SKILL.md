@@ -285,6 +285,13 @@ jj makes this the easy part — **integration never halts**.
      working-copy hunk into its downstack commit, reports where each landed, and
      leaves any ambiguous hunk in the working copy for deliberate manual
      placement. Skip it when there are no scattered fixes to absorb.
+   - **Amend after review on an already-open PR (the automated loop).** When the
+     review lives on a GitHub PR that is already open,
+     [`/jj-pr-fixup <pr>`](../jj-pr-fixup/SKILL.md) runs the whole
+     amend-after-review loop end-to-end: it reads the PR's review comments, fixes
+     them in a workspace based on the PR head, absorbs each fix into the commit it
+     belongs to (composing `/jj-absorb`), and re-pushes — so the reconcile tail
+     need not drive the absorb-and-push by hand.
    - Then run the push-and-PR step:
      [`/jj-pr <bookmark>`](../jj-pr/SKILL.md) — it pushes the bookmark
      (`jj git push -b <bookmark>`, handling one-time `jj bookmark track`) and
