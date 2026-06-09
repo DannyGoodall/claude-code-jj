@@ -39,7 +39,14 @@ cd your-repo && jj git init --colocate
 # the jj reference layer (worker vocabulary) — unmodified upstream
 claude plugin marketplace add schpet/toolbox
 claude plugin install jj-vcs@toolbox
+
+# GitHub CLI — required only if you use /jj-pr (push + open/update a PR)
+brew install gh && gh auth login   # or your platform's package
 ```
+
+`gh` (authenticated) is a prerequisite for the **`/jj-pr`** push-and-PR step and
+the reconcile tails that call it. Everything else — `/jj-delegate`, `/jj-fleet`,
+the fan-out, local jj — works without it.
 
 ## Install
 

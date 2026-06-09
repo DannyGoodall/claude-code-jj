@@ -66,6 +66,9 @@ cd your-repo && jj git init --colocate
 claude plugin marketplace add schpet/toolbox
 claude plugin install jj-vcs@toolbox
 
+# GitHub CLI — required only if you use /jj-pr (push a bookmark + open/update its PR)
+brew install gh && gh auth login
+
 # this marketplace
 claude plugin marketplace add DannyGoodall/claude-code-jj   # or a local clone path
 claude plugin install jj-concurrent@claude-code-jj
