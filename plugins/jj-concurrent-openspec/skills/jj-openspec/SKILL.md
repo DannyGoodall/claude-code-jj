@@ -35,9 +35,9 @@ reconcile it:
 
 | Verb(s) | Shape | What the worker produces | Reconcile tail |
 |---------|-------|--------------------------|----------------|
-| `apply` | **Implementing** | code changes + ticked tasks.md | integrate → `/opsx:verify` → issue-tracker update → `/jj-pr` push/PR |
-| `propose` / `new` / `ff` | **Authoring** | the change artifacts under `openspec/changes/<name>/` (proposal/design/specs/tasks) | surface artifacts for review; bookmark only; **no verify, no merge-to-main** (nothing is implemented yet) |
-| `relay` | **Composite** (authoring-leg → human gate → implementing-leg) | first the authoring artifacts, then — only on a human *go* — the implementing code + ticked tasks.md | the **authoring** tail (validate + surface) at the gate, then on go the **implementing** tail (integrate → verify → push/PR); see §6 |
+| `apply` | **Implementing** | code changes + ticked tasks.md | integrate → `/opsx:verify` **(GATE)** → on green: `/opsx:archive` then issue-tracker update → `/jj-pr` push/PR; on non-green: **stop** before trunk-advance/PR and report |
+| `propose` / `new` / `ff` | **Authoring** | the change artifacts under `openspec/changes/<name>/` (proposal/design/specs/tasks) | surface artifacts for review; bookmark only; **no verify, no archive, no merge-to-main** (nothing is implemented yet) |
+| `relay` | **Composite** (authoring-leg → human gate → implementing-leg) | first the authoring artifacts, then — only on a human *go* — the implementing code + ticked tasks.md | the **authoring** tail (validate + surface) at the gate, then on go the **implementing** tail (integrate → verify gate → archive → push/PR); see §6 |
 | `explore` | **Interactive** | (a thinking partner — file output only when asked) | NOT a default background candidate. Only background as "autonomous exploration → a written findings doc" when the user explicitly asks. Otherwise run it inline, not via a worker. |
 
 `relay` is **not a new shape** — it is a *composition* of the two existing
@@ -282,9 +282,13 @@ per-group workload strings and the reconcile policy in §5.
 
 ## 5. Reconcile tail (after jj-delegate integrates the worker's commits)
 
-**Implementing (`apply`)**, in the primary workspace. The verify → push/PR tail
-runs **exactly once over the reconciled change branch**, identically for both
-distributions — the only difference is how many workers feed into it.
+**Implementing (`apply`)**, in the primary workspace. The verify GATE and the
+auto-archive-on-green step run **exactly once over the reconciled change
+branch**, identically for both distributions — the only difference is how many
+workers feed into it. Verify is a **gate**, not advisory: trunk-advance, push,
+and PR are CONDITIONAL on a green verify. All of verify, archive, the
+conditional trunk-advance, and push/PR run in the orchestrator (primary
+workspace) — never in a worker (workers never verify, archive, or push).
 
 **Reconcile-into-one-change (fan-out only — first):**
 
@@ -308,25 +312,57 @@ distributions — the only difference is how many workers feed into it.
 (Single-worker distribution skips the reconcile-into-one step: jj-delegate has
 already integrated the lone worker onto the change branch.)
 
-**Verify → push/PR tail (both distributions):**
+**Verify GATE → archive → push/PR tail (both distributions):**
 
-1. Run `/opsx:verify <change>` against the integrated result (check out / log
-   the worker's commits; jj makes them visible without a checkout dance).
-2. If the project links changes to an issue tracker (e.g. a Linear umbrella
+This tail runs ONCE, over the fully reconciled change branch (every group's
+commits integrated, every task ticked), regardless of single-worker vs fan-out.
+
+1. **Verify GATE.** Run `/opsx:verify <change>` against the integrated result
+   (check out / log the worker's commits; jj makes them visible without a
+   checkout dance). Branch on its outcome — and treat only an **unambiguous
+   green** as pass (a flaky/inconclusive result fails safe toward NOT pushing):
+
+   - **Non-green (fail or inconclusive) ⇒ STOP the tail here.** Perform **no**
+     `/opsx:archive`, **no** trunk-advance, **no** `jj git push`, and open
+     **no** PR — no trunk mutation, no ref mutation. Hold the integrated change
+     un-pushed in place so a human or a follow-up apply can inspect and fix it.
+     Surface the verify failure as orchestrator data: which scenarios / tasks
+     verify flagged, on which change/bookmark. Report and stop.
+   - **Green ⇒ continue** to step 2.
+
+2. **Auto-archive on green.** Before any push/PR, run `/opsx:archive <change>`
+   in the primary workspace. This syncs the change's delta specs into the
+   canonical `openspec/specs/` and moves `openspec/changes/<name>/` to
+   `openspec/changes/archive/`, closing the OpenSpec lifecycle as part of the
+   successful apply. Capture the canonical-spec sync **and** the change-directory
+   move on the **same** reconciled change branch that will advance to trunk / the
+   PR — so the PR/trunk state reflects the *closed* lifecycle, reviewed and
+   merged in one shot. If archive's delta-sync overlaps canonical specs already
+   edited on trunk, jj records a **first-class conflict**; resolve it by
+   **editing the conflict markers in the file** (never the interactive
+   `jj resolve`), consistent with the integration contract in the
+   reconcile-into-one step above.
+
+3. If the project links changes to an issue tracker (e.g. a Linear umbrella
    issue per change), update it with the push/PR link and status.
-3. Run the push-and-PR step [`/jj-pr <bookmark>`](../../../jj-concurrent/skills/jj-pr/SKILL.md):
+
+4. Run the push-and-PR step [`/jj-pr <bookmark>`](../../../jj-concurrent/skills/jj-pr/SKILL.md):
    it pushes the bookmark (`jj git push -b <bookmark>`, handling one-time
    `jj bookmark track`) and creates-or-updates the GitHub PR via `gh`, sourcing
-   the body from this change's `openspec/changes/<name>/proposal.md`. Report:
-   change, bookmark, PR, verify outcome, remaining unticked tasks.
+   the body from this change's `proposal.md` (now under
+   `openspec/changes/archive/<name>/`). Report: change, bookmark, PR, verify
+   outcome (green), that the change was archived, and any remaining unticked
+   tasks.
 
 **Authoring (`propose`/`new`/`ff`)**, in the primary workspace:
 
 1. Run `openspec validate <change>` on the drafted artifacts.
 2. Surface them for review — either push the `change/<slug>` bookmark and open
    a draft PR, or simply report the new `openspec/changes/<name>/` tree for the
-   user to inspect. Do NOT merge to main and do NOT verify (there is no
-   implementation yet).
+   user to inspect. Do NOT merge to main, do NOT verify, and do NOT archive
+   (there is no implementation yet — the verify GATE and auto-archive are the
+   `apply` shape's only). `explore` is likewise untouched: it runs inline with
+   no gate and no archive.
 3. Report: change name, the artifacts created, validate outcome, and the
    natural next step (`/jj-openspec apply <name>` once the proposal is agreed).
 
@@ -438,13 +474,43 @@ dependency on the other, both groups are non-trivial — so the separable set is
 one `feat/add-export` branch. Worker A's `src/api/**` edits and Worker B's
 `docs/**` edits are disjoint ⇒ no conflict. In `tasks.md`, A ticked lines 1.1/1.2
 and B ticked lines 2.1/2.2 — disjoint hunks ⇒ they merge cleanly into a single
-fully-ticked `tasks.md`. Verify → push/PR runs **once** over the combined branch.
+fully-ticked `tasks.md`. The verify GATE → archive → push/PR tail then runs
+**once** over the combined branch (see the worked example below).
 
 The resulting branch is identical to what a single worker would have produced —
 all four tasks done on `feat/add-export` — only the work was distributed across
 two workspaces. (Had Group 2 also touched `src/api/**`, or said "after the API
 lands", detection would mark them non-separable and apply would run the
 single-worker path instead.)
+
+## Worked example: the verify GATE (green archives + opens a PR; non-green holds)
+
+Both branches start the same: `/jj-openspec apply <change>` provisions the
+worker(s), and jj-delegate integrates their commits onto the one change branch.
+Then the orchestrator runs the gate (§5) **once** over the reconciled branch.
+
+**Green apply — archives, then opens a PR.** `/opsx:verify <change>` over the
+reconciled branch reports an unambiguous green (every scenario/task satisfied).
+The orchestrator continues the tail: it runs `/opsx:archive <change>`, which
+syncs the change's delta specs into `openspec/specs/` and moves
+`openspec/changes/<change>/` to `openspec/changes/archive/<change>/` — captured
+as commits on the **same** change branch. It then runs `/jj-pr <bookmark>`,
+pushing the bookmark and opening the GitHub PR over the lifecycle-complete
+result (updated canonical specs + archived change), and reports: change,
+bookmark, PR URL, `verify: green`, `archived: yes`. A human reviews and merges
+one PR that already reflects the closed lifecycle — no manual archive follow-up.
+
+**Failing apply — holds the change un-pushed with a reported reason.**
+`/opsx:verify <change>` over the reconciled branch reports a failure (say,
+scenario `payment refunds a captured charge` has no implementation, and task
+`3.2 wire the refund webhook` is ticked but absent). The gate **stops the tail
+immediately**: the orchestrator runs **no** `/opsx:archive`, **no**
+trunk-advance, **no** `jj git push`, opens **no** PR. The integrated change sits
+on its bookmark, un-pushed, for inspection. The orchestrator reports it as data:
+`verify: failed`, the failing scenario(s)/task(s), and the change/bookmark
+holding the un-pushed work — so a human or a follow-up `/jj-openspec apply
+<change>` can fix the gap. Nothing reached trunk or a PR. (A flaky/inconclusive
+verify takes this same fail-safe stop-and-report path.)
 
 ## Fallback guarantee (identical end result)
 
