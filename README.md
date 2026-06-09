@@ -12,15 +12,17 @@ This is the jj successor to a Graphite/git-worktree orchestration.
 **Documentation:**
 
 - [JJ_OVERVIEW.md](JJ_OVERVIEW.md) — new to jj? Start here: the working-copy-as-commit model, colocated jj-on-git, and how jj workspaces differ from git worktrees.
-- [MANUAL.md](MANUAL.md) — operating the plugins: the orchestrator/worker contract, workspace lifecycle, `/jj-delegate`, `/jj-openspec`, the hooks, and a gotchas/troubleshooting table.
+- [MANUAL.md](MANUAL.md) — operating the plugins: the orchestrator/worker contract, workspace lifecycle, `/jj-delegate`, the fan-out, `/jj-fleet`, `/jj-pr`, `/jj-openspec`, the Linear binding, the hooks, and a gotchas/troubleshooting table.
 - [DESIGN.md](DESIGN.md) — the design rationale (ADR): why jj over GitButler (shared-tree write race) and over git worktrees (restack-while-checked-out hazard).
+- [ROADMAP.md](ROADMAP.md) — the proposed-but-not-yet-built features (OpenSpec proposals under `openspec/changes/`).
 
 ## Plugins
 
 | Plugin | What it adds |
 |--------|--------------|
-| **`jj-concurrent`** | The core: `jj-delegate` skill (orchestrator/worker lifecycle), the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores). Workflow-agnostic. |
-| **`jj-concurrent-openspec`** | `jj-openspec` skill — backgrounds an OpenSpec verb (`apply` / `propose` / `new` / `ff`) in its own jj workspace, mapping verb → shape → reconcile tail. Enable only in OpenSpec repos. |
+| **`jj-concurrent`** | The core. Skills: **`jj-delegate`** (orchestrator/worker lifecycle), **`jj-fleet`** (one at-a-glance status view of all in-flight workers), **`jj-pr`** (push a bookmark + create/update its GitHub PR — the "submit" jj lacks). Plus the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores). Workflow-agnostic. |
+| **`jj-concurrent-openspec`** | `jj-openspec` skill — backgrounds an OpenSpec verb (`apply` / `propose` / `new` / `ff`) in its own jj workspace, mapping verb → shape → reconcile tail. `apply` can **fan out** across a change's separable `tasks.md` groups — one workspace per group, reconciled into one branch. Enable only in OpenSpec repos. |
+| **`jj-concurrent-linear`** | `jj-linear` skill — Linear binding over the orchestrator: at the reconcile point, maps each worker's structured JSON report to its Linear sub-issue (in-progress → done on a clean finish, blocker/conflict comment otherwise). Separate, separately-enabled binding; enable only in Linear-tracked repos (requires a configured Linear MCP server). |
 
 This marketplace does **not** vendor a jj command reference — it depends on the
 excellent read-only [`jj-vcs@toolbox`](https://github.com/schpet/toolbox/tree/main/plugins/jj-vcs)
@@ -37,7 +39,14 @@ cd your-repo && jj git init --colocate
 # the jj reference layer (worker vocabulary) — unmodified upstream
 claude plugin marketplace add schpet/toolbox
 claude plugin install jj-vcs@toolbox
+
+# GitHub CLI — required only if you use /jj-pr (push + open/update a PR)
+brew install gh && gh auth login   # or your platform's package
 ```
+
+`gh` (authenticated) is a prerequisite for the **`/jj-pr`** push-and-PR step and
+the reconcile tails that call it. Everything else — `/jj-delegate`, `/jj-fleet`,
+the fan-out, local jj — works without it.
 
 ## Install
 
@@ -46,6 +55,7 @@ claude plugin install jj-vcs@toolbox
 claude plugin marketplace add /path/to/claude-code-jj   # or DannyGoodall/claude-code-jj
 claude plugin install jj-concurrent@claude-code-jj
 claude plugin install jj-concurrent-openspec@claude-code-jj   # only for OpenSpec repos
+claude plugin install jj-concurrent-linear@claude-code-jj      # only for Linear-tracked repos
 ```
 
 Restart Claude Code after installing. The hooks (snapshot + guard) take effect
@@ -64,8 +74,14 @@ claude: [jj workspace add -r … · bookmark create · dispatch jj-workspace-wor
          in its workspace; reports JSON.
         [reconcile: verify · jj git push -b feat/rate-limit · jj workspace forget]
 
-# apply an OpenSpec change on its own workspace
+# apply an OpenSpec change on its own workspace (add "fan out" to split it across task groups)
 you:    /jj-openspec apply timetabling-strand-location-grouping
+
+# while workers run: one status view of the whole fleet
+you:    /jj-fleet
+
+# submit a finished bookmark — push + open/update its GitHub PR
+you:    /jj-pr feat/rate-limit
 ```
 
 ## Validation
@@ -88,13 +104,27 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**v0.1.2** — functionally validated and documented. The guard enforces the
-universal safety rules (no raw mutating git, no interactive jj, no `rm` on the
-VCS store) inside jj repos for both roles, with cwd-aware repo detection;
-role-specific enforcement (bookmarks/push are orchestrator-only) is carried by
-the worker-agent contract. Deliberately deferred to a later version (see
-[DESIGN.md](DESIGN.md) "Open questions"): workspace-based role detection *in* the
-guard, sparse-workspace partitions (`--sparse-patterns`), and smarter guard
-matching (it currently matches git/jj *mentions* in a command string, and
-`git -C <dir>` slips past — the worker contract is the primary line, the guard a
-backstop).
+**jj-concurrent v0.2.0** · jj-concurrent-openspec v0.1.0 · jj-concurrent-linear v0.1.0
+— functionally validated, documented, and self-hosting (the plugin is now
+OpenSpec-managed and its features ship via its own jj workers).
+
+The v0.1.x evaluation arc (substrate, single/concurrent workers, same-file
+conflict, colocated jj-on-git, the cwd-aware guard, the `/jj-openspec` relay) is
+complete — see the Validation table above. **v0.2.0** adds, on top of that base:
+
+- **`/jj-fleet`** — one read-only status view across all live workspaces (snapshots siblings first so it is never stale).
+- **`/jj-pr`** — push a bookmark and create/update its GitHub PR; wired into both reconcile tails as the submit step.
+- **OpenSpec apply fan-out** — `/jj-openspec apply` can split a change across its separable `tasks.md` groups, one workspace per group, reconciled into one branch.
+- **`jj-concurrent-linear`** — a third, separately-enabled plugin binding worker reports to Linear sub-issues at reconcile time.
+
+The guard still enforces the universal safety floor (no raw mutating git, no
+interactive jj, no `rm` on the VCS store) inside jj repos for both roles, with
+cwd-aware repo detection; role-specific enforcement (bookmarks/push are
+orchestrator-only) is carried by the worker-agent contract.
+
+**What's next** is captured as OpenSpec proposals — see [ROADMAP.md](ROADMAP.md).
+Deliberately deferred (see [DESIGN.md](DESIGN.md) "Open questions"):
+workspace-based role detection *in* the guard, sparse-workspace partitions
+(`--sparse-patterns`), and smarter guard matching (it currently matches git/jj
+*mentions* in a command string, and `git -C <dir>` slips past — the worker
+contract is the primary line, the guard a backstop).

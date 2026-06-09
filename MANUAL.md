@@ -7,6 +7,7 @@ Companion documents in this repo:
 - [README.md](README.md) — what the plugins are and how to install them
 - [JJ_OVERVIEW.md](JJ_OVERVIEW.md) — a primer on jj itself (colocated jj-on-git, the working-copy-as-commit model, workspaces vs git worktrees) for people new to it
 - [DESIGN.md](DESIGN.md) — the design rationale (why jj over GitButler and git worktrees), as an ADR
+- [ROADMAP.md](ROADMAP.md) — proposed-but-not-yet-built features, as OpenSpec proposals under `openspec/changes/`
 
 New to jj? Read [JJ_OVERVIEW.md](JJ_OVERVIEW.md) first — this manual assumes the vocabulary.
 
@@ -21,7 +22,10 @@ New to jj? Read [JJ_OVERVIEW.md](JJ_OVERVIEW.md) first — this manual assumes t
 - [Workspace lifecycle](#workspace-lifecycle)
 - [Single worker: /jj-delegate](#single-worker-jj-delegate)
 - [Concurrent fan-out: many workers](#concurrent-fan-out-many-workers)
+- [Watching the fleet: /jj-fleet](#watching-the-fleet-jj-fleet)
+- [Submitting a bookmark: /jj-pr](#submitting-a-bookmark-jj-pr)
 - [Orchestrating OpenSpec changes: /jj-openspec](#orchestrating-openspec-changes-jj-openspec)
+- [Reporting to Linear: /jj-linear](#reporting-to-linear-jj-linear)
 - [The hooks (snapshot + guard)](#the-hooks-snapshot--guard)
 - [Orchestrator jj quick reference](#orchestrator-jj-quick-reference)
 - [Gotchas & troubleshooting](#gotchas--troubleshooting)
@@ -39,10 +43,13 @@ One Claude session is the **orchestrator**, living in the repository's primary (
 | Component | File | What it does |
 |-----------|------|--------------|
 | Skill: `jj-delegate` | `plugins/jj-concurrent/skills/jj-delegate/SKILL.md` | The mechanism — resolve workload → provision workspace → dispatch worker(s) → integrate. Workflow-agnostic. |
+| Skill: `jj-fleet` | `plugins/jj-concurrent/skills/jj-fleet/SKILL.md` | One read-only at-a-glance status view of all in-flight workers: snapshots every live workspace first, then joins jj state with the agent-plan manifest's per-slice status/blocker/workload. Orchestrator-only. |
+| Skill: `jj-pr` | `plugins/jj-concurrent/skills/jj-pr/SKILL.md` | The "submit" jj lacks — push a bookmark (`jj git push -b`) and create-or-update its GitHub PR via `gh`, generating a what/why body from the change's commits and any `proposal.md`. Orchestrator-only. |
 | Worker agent: `jj-workspace-worker` | `plugins/jj-concurrent/agents/jj-workspace-worker.md` | A constrained subagent: works in one workspace, jj only, never bookmarks/push/raw-git, with a structured JSON report. |
 | Snapshot hook | `plugins/jj-concurrent/hooks/scripts/jj-snapshot.sh` | PostToolUse on edits — runs `jj util snapshot` so an agent crash before its next jj command never loses the last edit. |
 | Guard hook | `plugins/jj-concurrent/hooks/scripts/jj-guard.sh` | PreToolUse on Bash — blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores. Only enforces inside a jj repo. |
-| Skill: `jj-openspec` | `plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md` | OpenSpec binding over `jj-delegate`: backgrounds an OpenSpec verb (`apply`/`propose`/`new`/`ff`) on a workspace, mapping verb → shape. Separate plugin — enable only in OpenSpec repos. |
+| Skill: `jj-openspec` | `plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md` | OpenSpec binding over `jj-delegate`: backgrounds an OpenSpec verb (`apply`/`propose`/`new`/`ff`) on a workspace, mapping verb → shape; `apply` can fan out across `tasks.md` groups. Separate plugin — enable only in OpenSpec repos. |
+| Skill: `jj-linear` | `plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md` | Linear binding over the orchestrator: at reconcile, maps each worker's JSON report to its Linear sub-issue (in-progress → done, or a blocker/conflict comment). Separate plugin — enable only in Linear-tracked repos; needs the Linear MCP server. |
 
 The jj **command vocabulary** the worker uses is *not* vendored here — it comes from the read-only [`jj-vcs@toolbox`](https://github.com/schpet/toolbox/tree/main/plugins/jj-vcs) plugin, installed unmodified.
 
@@ -59,10 +66,14 @@ cd your-repo && jj git init --colocate
 claude plugin marketplace add schpet/toolbox
 claude plugin install jj-vcs@toolbox
 
+# GitHub CLI — required only if you use /jj-pr (push a bookmark + open/update its PR)
+brew install gh && gh auth login
+
 # this marketplace
 claude plugin marketplace add DannyGoodall/claude-code-jj   # or a local clone path
 claude plugin install jj-concurrent@claude-code-jj
 claude plugin install jj-concurrent-openspec@claude-code-jj   # only for OpenSpec repos
+claude plugin install jj-concurrent-linear@claude-code-jj      # only for Linear-tracked repos
 ```
 
 Restart Claude Code after installing — hooks, the worker agent, and the skills load at session start.
@@ -170,6 +181,43 @@ jj log -r 'all()'
 
 ---
 
+## Watching the fleet: /jj-fleet
+
+Once more than one worker is in flight, you want one view of the whole fleet, not a manual sweep of `jj workspace list` + `jj log` + "which slice was that again?". `/jj-fleet` renders exactly that — a single read-only status table joining jj state with the orchestrator's agent-plan manifest:
+
+```text
+you: /jj-fleet
+claude: WORKSPACE        SLICE              CHANGE     STATUS       BLOCKER
+        ../wt-auth       auth-helper        kpqr…      working      —
+        ../wt-api        api-client         lmno…      reported ✓   —
+        ../wt-export     csv-export         stuv…      conflict ×   rebase onto auth
+```
+
+It is **strictly read-only** and orchestrator-only: it runs in the primary workspace, **snapshots every live workspace first** (`jj util snapshot` per workspace, so siblings are never shown stale — the same trick the fan-out section uses before `jj log`), then reads jj state and overlays the manifest's per-slice `status` / `blocker` / `workload`. It never touches bookmarks, push, or any worker's commits. Use it any time during a fan-out to decide what to reconcile, what to nudge, and what is blocked.
+
+---
+
+## Submitting a bookmark: /jj-pr
+
+`jj git push` moves a bookmark to the remote but never opens a pull request — jj has no "submit". `/jj-pr` is that missing step, in one orchestrator action:
+
+```text
+you: /jj-pr feat/rate-limit
+claude: [jj git push -b feat/rate-limit  (one-time: jj bookmark track … --remote=origin if needed)]
+        [gh: no PR exists → create it, body generated from the change's commits + any proposal.md]
+        → https://github.com/you/repo/pull/123
+```
+
+Given a bookmark it:
+
+1. pushes with `jj git push -b <bookmark>` (handling the one-time `jj bookmark track <name> --remote=origin` that a freshly colocated repo needs);
+2. checks GitHub via `gh` — **creates** the PR if none exists, **updates** it if one does (idempotent — safe to re-run after more commits);
+3. generates a what / why / benefit body from the change's commits and, if present, the OpenSpec `proposal.md`.
+
+It is **orchestrator-only** — it owns refs and push, so it is never invoked inside a worker — and it is the reconcile-tail "submit" step for both `/jj-delegate` and `/jj-openspec apply`. Requires a colocated jj↔git repo with an `origin` remote and an authenticated `gh`.
+
+---
+
 ## Orchestrating OpenSpec changes: /jj-openspec
 
 The `jj-concurrent-openspec` plugin binds the orchestrator to OpenSpec. One entry point, the verb selects the **shape**:
@@ -198,6 +246,35 @@ claude: [jj workspace add -r change/document-jj-eval-note ../wt-apply   ← prop
 ```
 
 The crux: the apply worker is based on the revision that *already contains* the proposal (`-r change/<slug>`). There is no seed-commit dance — jj just points the workspace at it.
+
+### Apply fan-out: one change across its task groups
+
+A large `apply` need not run in a single worker. When a change's `tasks.md` has **separable groups** (independent sections that don't depend on each other's output), `/jj-openspec apply` can fan out — one worker per group, each on its own sibling workspace based on the proposal revision, all reconciled into one change branch:
+
+```text
+you:    /jj-openspec apply timetabling-strand-location-grouping  (fan out across task groups)
+claude: plan — groups: [schema, loader, ui]; 3 sibling workspaces off
+        change/timetabling-strand-location-grouping. Proceed?
+you:    yes
+claude: [3 background workers, one per group → each ticks its own tasks.md section]
+        [reconcile: snapshot all · integrate the three into one stack on the change branch ·
+         merge the ticked tasks.md · /opsx:verify the whole change · /jj-pr]
+```
+
+This is the [concurrent fan-out](#concurrent-fan-out-many-workers) mechanism applied to a single OpenSpec change instead of independent slices. The same rules hold: physical isolation per workspace, integration never halts, snapshot siblings before logging. Only split groups that are genuinely independent — overlapping groups just produce conflicts to resolve at reconcile (recoverable, but pointless work). The reconcile tail merges the per-group `tasks.md` ticks, verifies the change as a whole, then submits via `/jj-pr`.
+
+---
+
+## Reporting to Linear: /jj-linear
+
+The `jj-concurrent-linear` plugin is a **separate, separately-enabled binding** — enable it only in Linear-tracked repos; it needs a configured Linear MCP server (`mcp__linear-server__*`). It does one job, at the orchestrator's **reconcile point**: take each background worker's structured JSON report and reflect it onto that worker's Linear sub-issue.
+
+| Worker outcome | Linear action |
+|----------------|---------------|
+| clean finish | transition the sub-issue **in-progress → done** |
+| blocker / conflict | post a **comment** with the blocker/conflict detail; leave status as-is |
+
+It threads the umbrella + sub-issue IDs captured at **dispatch**, keyed by the worker's **workspace path**, so each report lands on the right issue. The worker itself stays Linear-agnostic — it only ever emits its JSON report; all Linear I/O is the orchestrator's, at reconcile. There is no issue *creation* and no PR cross-linking in this version (PR submission is `/jj-pr`'s job); this binding is purely report → sub-issue status.
 
 ---
 
