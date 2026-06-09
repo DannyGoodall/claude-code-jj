@@ -1,5 +1,5 @@
 {
   "name": "jj-concurrent",
   "version": "0.3.0",
-  "description": "Concurrent multi-agent orchestration on Jujutsu (jj) workspaces: the jj-delegate mechanism, the jj-workspace-worker agent, the jj-absorb amend-after-review step (preview with jj absorb --dry-run, distribute working-copy hunks into their downstack commits, and report where each landed), the jj-pr push-and-PR step (push a bookmark then create-or-update its GitHub PR via gh), plus snapshot and guard hooks."
+  "description": "Concurrent multi-agent orchestration on Jujutsu (jj) workspaces: the jj-delegate mechanism, the jj-workspace-worker agent, the jj-absorb amend-after-review step (preview with jj absorb --dry-run, distribute working-copy hunks into their downstack commits, and report where each landed), the jj-pr push-and-PR step (push a bookmark then create-or-update its GitHub PR via gh), the jj-stacked-pr step (open/update a stack of based GitHub PRs from a stitched linear jj stack), plus snapshot and guard hooks."
 }

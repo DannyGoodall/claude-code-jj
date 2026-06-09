@@ -126,6 +126,15 @@ jj makes this the easy part — **integration never halts**.
      [`/jj-pr <bookmark>`](../jj-pr/SKILL.md) — it pushes the bookmark
      (`jj git push -b <bookmark>`, handling one-time `jj bookmark track`) and
      creates-or-updates the GitHub PR via `gh` with a generated body.
+
+   **When the fan-out's siblings were stitched into a single linear stack**
+   (`base → A → B → C`) rather than landed independently, the stacked submit step
+   is [`/jj-stacked-pr <tip>`](../jj-stacked-pr/SKILL.md) instead — it derives the
+   parent chain from the jj stack topology and opens/updates one PR per bookmark
+   **based on its parent** (the root on trunk), composing `/jj-pr` per bookmark
+   and adding a cross-reference stack-navigation comment. Use the single-change
+   `/jj-pr <bookmark>` for a non-stacked change; use `/jj-stacked-pr <tip>` for a
+   stitched stack.
 4. **Tear down the workspace** to keep state minimal (the geirsson principle —
    abandon dead workspaces aggressively):
    ```bash
