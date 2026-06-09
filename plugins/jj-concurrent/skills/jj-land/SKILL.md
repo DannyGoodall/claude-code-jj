@@ -5,13 +5,14 @@ description: |
   of Graphite's `gt merge`. Given a jj stack whose changes already have open
   GitHub PRs, it derives the merge order from the jj stack itself (trunk upward),
   then for each PR in turn waits for required CI, merges it (`gh pr merge`,
-  default `--squash`, `--delete-branch`, never `--admin`/force), retargets the
-  next-up PR's base to trunk via `gh pr edit --base`, and continues up the stack.
-  A red required check or a per-PR wait-timeout aborts the rest of the stack
-  cleanly, leaving merged PRs merged and the un-reached tail open. After the loop
-  it runs a single cleanup pass: `jj git fetch` to sync local trunk, delete the
-  merged bookmarks only, and forget any stale linked workspaces via jj-delegate
-  Teardown. Re-running resumes from the first still-open PR. Triggers: /jj-land,
+  default `--squash`, never `--admin`/force; success judged by PR state, not exit
+  code), retargets the next-up PR's base to trunk via `gh pr edit --base`, and
+  continues up the stack. A red required check or a per-PR wait-timeout aborts the
+  rest of the stack cleanly, leaving merged PRs merged and the un-reached tail
+  open. After the loop it runs a single cleanup pass: `jj git fetch` to sync local
+  trunk, delete the merged bookmarks AND their remote branches, and forget any
+  stale linked workspaces via jj-delegate Teardown. Re-running resumes from the
+  first still-open PR. Triggers: /jj-land,
   "land the stack", "merge this jj stack bottom-up", "land/merge the stacked PRs
   for <top>". The land step of the /jj-delegate reconcile tail, downstack of
   /jj-pr and /jj-stacked-pr. Orchestrator-only (owns bookmarks, refs, push,
@@ -198,16 +199,34 @@ A re-run after a fix resumes from the first still-open PR (§2.3).
 
 ### 4.1 Merge the gated PR (no force, no admin)
 
-Once the PR's required checks pass, merge it with the configured method and
-server-side branch cleanup:
+Once the PR's required checks pass, merge it with the configured method —
+**without** `--delete-branch` (branch removal is done explicitly in §5.2):
 
 ```bash
-gh pr merge <pr> --squash --delete-branch        # --method default: squash
+gh pr merge <pr> --squash                         # --method default: squash
 #   or --merge / --rebase per --method; NEVER --admin, NEVER force
+#   NOTE: no --delete-branch — see the colocated gotcha below
 ```
 
-`--delete-branch` removes the merged head branch server-side. The skill SHALL NOT
-pass `--admin`, SHALL NOT force, and SHALL NOT override branch protection.
+Then **confirm the merge by PR state, not by the command's exit code**:
+
+```bash
+gh pr view <pr> --json state --jq '.state'        # expect: MERGED
+```
+
+A `state` of `MERGED` means the merge succeeded; proceed (the head branch is
+removed in §5.2). The skill SHALL NOT pass `--admin`, SHALL NOT force, and SHALL
+NOT override branch protection.
+
+**Colocated gotcha — why `--delete-branch` is dropped and exit code is not
+trusted.** In a colocated jj↔git repo, jj keeps git HEAD **detached** (jj owns
+the refs, not git branches). `gh pr merge … --delete-branch` then fails its
+*local*-branch cleanup step with `could not determine current branch: failed to
+run git: not on any branch`, which (a) makes `gh pr merge` **exit non-zero even
+though the remote merge succeeded**, and (b) **aborts before the server-side
+branch delete**, leaving the remote branch as a straggler. So the merge step
+omits `--delete-branch` (no local step to fail) and judges success from
+`gh pr view --json state`; §5.2 deletes the remote branch explicitly.
 
 ### 4.2 Branch-protection / merge-blocked is a reported blocker
 
@@ -256,18 +275,26 @@ jj git fetch --no-pager
 Brings the merged commits onto the local trunk-tracking bookmark so the local
 trunk reflects what landed on GitHub.
 
-### 5.2 Delete merged bookmarks only
+### 5.2 Delete merged bookmarks and their remote branches
 
-For each change whose PR merged, delete its local bookmark; leave bookmarks for
-un-merged PRs intact:
+For each change whose PR merged, delete BOTH its local bookmark and its remote
+head branch (§4.1 no longer deletes the branch server-side); leave un-merged PRs'
+bookmarks and branches intact:
 
 ```bash
+# local bookmark
 jj bookmark delete <name> --no-pager
+# remote head branch — explicit, since the merge no longer passes --delete-branch.
+# Resolve <owner>/<repo> once: gh repo view --json nameWithOwner --jq .nameWithOwner
+gh api -X DELETE "repos/<owner>/<repo>/git/refs/heads/<branch>"
 ```
 
-The delete is keyed on **merge state**, not on the remote head branch still
-existing — so a head branch already deleted server-side by `--delete-branch`
-(§4.1) is fine. Never delete a bookmark whose PR did not merge.
+The remote-branch delete is **idempotent**: an already-absent branch returns
+404/422, which is treated as success (e.g. a re-run, or a branch GitHub auto-
+deleted). Both deletes are keyed on **merge state** — never delete a bookmark or
+remote branch whose PR did not merge. This explicit remote delete is what keeps
+`origin` free of stragglers now that the merge step omits `--delete-branch`
+(which fails under colocated jj — see §4.1).
 
 ### 5.3 Forget stale workspaces via jj-delegate Teardown
 
@@ -293,8 +320,9 @@ Return a compact, ordered result the reconcile tail can surface:
   `skipped-already-merged`, plus the **base value set** for each retargeted PR.
 - **Where the run stopped**, if it aborted: the stopping PR and the reason
   (`checks-red`, `waiting-timed-out`, `blocked`).
-- **Cleanup summary**: trunk fetched (yes/no), the bookmarks deleted, and the
-  workspaces forgotten — all keyed to the merged changes only.
+- **Cleanup summary**: trunk fetched (yes/no), the bookmarks deleted, the remote
+  branches deleted, and the workspaces forgotten — all keyed to the merged
+  changes only.
 
 Example shape:
 
@@ -305,6 +333,7 @@ landed (bottom → top):
   3. feat/ui          #42  checks-red  (run stopped here)
 stopped: #42 feat/ui — required check failed
 cleanup: jj git fetch ✓ | bookmarks deleted: feat/data-layer, feat/api |
+         remote branches deleted: feat/data-layer, feat/api |
          workspaces forgotten: wt-data-layer, wt-api
 ```
 
