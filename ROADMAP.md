@@ -8,8 +8,14 @@ the implementation breakdown. Shipped features live in the
 so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
-This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.5.1 /
-jj-concurrent-openspec v0.2.0 there are **9 active proposals**.
+This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.6.0 /
+jj-concurrent-openspec v0.2.0 there are **6 active proposals**.
+
+**Recently shipped (jj-concurrent v0.6.0)** — the workspace & dev-environment
+batch, applied as a 3-worker fan-out and landed via the now-fixed `/jj-land`:
+`worktreeinclude-provisioning` (declarative gitignored-file seeding on provision),
+`jj-preview-skill` (`/jj-preview <rev>` throwaway dev-env), and
+`sparse-workspace-partitions` (opt-in `--sparse-patterns` hard file-ownership).
 
 **Recently shipped (jj-concurrent v0.3.0)** — applied concurrently by the plugin's
 own workers and reconciled in one stack
@@ -75,22 +81,16 @@ Extending the `jj-concurrent-linear` binding from "report → sub-issue" to a fu
 
 ## Safety & isolation
 
-Hardening the concurrency model from convention into structure.
-
-| Change | What it would add |
-|--------|-------------------|
-| [`sparse-workspace-partitions`](openspec/changes/sparse-workspace-partitions/) | Use `jj workspace add --sparse-patterns` so a worker's working copy only materialises its declared lane — making "these are the only files you touch" a structural guarantee, not a request that surfaces as a conflict at integration. |
-
-(The orchestrator-only role rule is enforced *in the guard hook* — shipped in
-v0.3.0 as `workspace-aware-guard-role-enforcement`; multi-orchestrator
-namespacing shipped in v0.5.0, see Recently shipped above.)
+The proposals here have all shipped: the guard-hook role rule
+(`workspace-aware-guard-role-enforcement`, v0.3.0), `multi-orchestrator-namespacing`
+(v0.5.0), and `sparse-workspace-partitions` (v0.6.0). Intentionally empty until
+new safety/isolation work is proposed.
 
 ## Workspaces & dev environment
 
-| Change | What it would add |
-|--------|-------------------|
-| [`worktreeinclude-provisioning`](openspec/changes/worktreeinclude-provisioning/) | When provisioning a worker workspace, honour the same include-file convention Claude Code uses to seed git worktrees (copy the declared gitignored files) instead of ad-hoc `cp .env.local`. |
-| [`jj-preview-skill`](openspec/changes/jj-preview-skill/) | A `/jj-preview <rev>` skill — provision a throwaway workspace at a commit/bookmark, copy env, run the app on an assigned port, report the URL, then tear down — to stand up a dev environment from a change before archive/merge. |
+Both proposals — `worktreeinclude-provisioning` and `jj-preview-skill` — shipped
+in v0.6.0 (see Recently shipped, above). Intentionally empty until new
+workspace/dev-env work is proposed.
 
 ---
 
