@@ -8,8 +8,8 @@ the implementation breakdown. Shipped features live in the
 so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
-This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.3.0 /
-jj-concurrent-openspec v0.2.0 there are **8 active proposals**.
+This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.4.0 /
+jj-concurrent-openspec v0.2.0 there are **10 active proposals**.
 
 **Recently shipped (jj-concurrent v0.3.0)** — applied concurrently by the plugin's
 own workers and reconciled in one stack
@@ -24,6 +24,12 @@ fan-out, reconciled through a deliberate 4-way merge on `jj-openspec/SKILL.md`
 `gate-verify-autoarchive-on-apply`, `jj-openspec-relay`, `jj-openspec-healthcheck`,
 and `multi-change-concurrent-pipeline`.
 
+**Recently shipped (jj-concurrent v0.4.0)** — `jj-land` (`/jj-land`): land a stack
+of GitHub PRs bottom-up, CI-gated, **retargeting each child's base to trunk
+before merge** so a stack can no longer orphan its upper PRs onto deleted feature
+branches (the hazard that stranded the earlier #6/#7 content). Applied alongside
+three new proposals authored in the same four-worker fan-out (below).
+
 ---
 
 ## jj-native stack & history (git-flow parity)
@@ -34,7 +40,6 @@ The Graphite workflows this plugin succeeds, rebuilt on jj primitives.
 |--------|-------------------|
 | [`jj-pr-fixup`](openspec/changes/jj-pr-fixup/) | Reads a PR's review comments, fixes them in a workspace based on the PR head, absorbs each fix into the commit it belongs to, and re-pushes — the amend-after-review loop end-to-end. Builds on the shipped `/jj-absorb` and `/jj-pr`. |
 | [`jj-keep-current`](openspec/changes/jj-keep-current/) | Detect trunk moved → fetch → `jj rebase` the stack → push → re-check CI; gate landing behind a green required-checks signal so a stale-but-green PR never lands. |
-| [`jj-land`](openspec/changes/jj-land/) | Land a whole stack of PRs bottom-up (the `gt merge` equivalent): wait for CI at each step, restack the rest, sync local trunk, tidy merged bookmarks and stale workspaces. |
 
 ## OpenSpec orchestration
 
@@ -62,9 +67,17 @@ Hardening the concurrency model from convention into structure.
 | Change | What it would add |
 |--------|-------------------|
 | [`sparse-workspace-partitions`](openspec/changes/sparse-workspace-partitions/) | Use `jj workspace add --sparse-patterns` so a worker's working copy only materialises its declared lane — making "these are the only files you touch" a structural guarantee, not a request that surfaces as a conflict at integration. |
+| [`multi-orchestrator-namespacing`](openspec/changes/multi-orchestrator-namespacing/) | Support more than one orchestrator per repo: session-namespaced agent-plan manifests (`.jj-agent-plan.<session>.json`), `/jj-fleet` unions them, per-orchestrator workspace/bookmark prefixes, and cleanup of stale manifests left by dead orchestrators/agents. (Today two orchestrators clobber the one manifest and can collide on names.) |
 
 (The orchestrator-only role rule is now enforced *in the guard hook* — shipped in
 v0.3.0 as `workspace-aware-guard-role-enforcement`.)
+
+## Workspaces & dev environment
+
+| Change | What it would add |
+|--------|-------------------|
+| [`worktreeinclude-provisioning`](openspec/changes/worktreeinclude-provisioning/) | When provisioning a worker workspace, honour the same include-file convention Claude Code uses to seed git worktrees (copy the declared gitignored files) instead of ad-hoc `cp .env.local`. |
+| [`jj-preview-skill`](openspec/changes/jj-preview-skill/) | A `/jj-preview <rev>` skill — provision a throwaway workspace at a commit/bookmark, copy env, run the app on an assigned port, report the URL, then tear down — to stand up a dev environment from a change before archive/merge. |
 
 ---
 
@@ -80,7 +93,7 @@ capability spec, so applying both means merging the delta into one spec at
 archive time rather than two independent syncs:
 
 - the **Linear** changes (`linear-dispatch-issue-creation`, `jj-linear-dispatch`, `jj-linear-burndown`, `jj-linear-reconcile-summary`) all extend the `jj-linear-sync` capability;
-- the **PR family** (`jj-pr-fixup`, `jj-keep-current`, `jj-land`) all build on the shipped `/jj-pr` / `/jj-stacked-pr` (the `jj-github-pr` capability).
+- the **PR family** (`jj-pr-fixup`, `jj-keep-current`) all build on the shipped `/jj-pr` / `/jj-stacked-pr` / `/jj-land` (the `jj-github-pr` capability).
 
 Apply the members of a family in sequence, not in a single blind fan-out, so the
 spec merges stay legible.
