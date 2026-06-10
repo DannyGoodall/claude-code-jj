@@ -1,6 +1,6 @@
 # ADR 0002 — Multi-agent orchestration on jj (Jujutsu) workspaces
 
-- **Status:** Proposed (2026-06-08)
+- **Status:** Accepted (proposed 2026-06-08; built and shipped). The four-layer architecture below was implemented as the marketplace's four plugins — `jj-concurrent`, `jj-concurrent-openspec`, `jj-concurrent-linear`, and the later `jj-lifecycle` — with the `jj-delegate` mechanism, the `jj-openspec` binding, and the guard + snapshot hooks all live. This ADR records the design as decided; the live `SKILL.md` files, plugin manifests, `MANUAL.md`, and `ROADMAP.md` track what subsequently shipped on top of it.
 - **Context note:** This is a *process/tooling* ADR (how this repo is developed by multiple Claude agents at once), not a product-domain decision. It records the design we will build before we build it.
 - **Supersedes / replaces direction:** the Graphite (`gt`) + git-worktree orchestration captured in the archived memory at `docs/protected-memory/graphite-tooling-archived-2026-06-08.md` (the `gt-delegate` / `gt-apply` / `gt-guard` fork). That work is sound but its substrate — git worktrees + Graphite restacks — carries hazards this ADR's substrate removes.
 - **Related:** OpenSpec (`opsx:*` skills); Linear (`Points2026` team) issue/PR convention; the read-only jj reference plugin `jj-vcs@toolbox` (schpet/toolbox); ADR 0001 (test strategy the workers must honour).

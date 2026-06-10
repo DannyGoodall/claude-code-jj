@@ -84,6 +84,7 @@ brew install gh && gh auth login
 # this marketplace
 claude plugin marketplace add DannyGoodall/claude-code-jj   # or a local clone path
 claude plugin install jj-concurrent@claude-code-jj
+claude plugin install jj-lifecycle@claude-code-jj             # /jj-release — standalone, no concurrency needed
 claude plugin install jj-concurrent-openspec@claude-code-jj   # only for OpenSpec repos
 claude plugin install jj-concurrent-linear@claude-code-jj      # only for Linear-tracked repos
 ```
