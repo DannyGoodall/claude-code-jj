@@ -40,4 +40,4 @@
 ## 8. Validation
 
 - [x] 8.1 Run `openspec validate jj-pr-fixup` and resolve any structural errors
-- [ ] 8.2 Manually exercise `/jj-pr-fixup` against a scratch colocated repo with a real PR carrying review comments: confirm comment→brief mapping, PR-head basing, absorb placement, in-place PR update, and the no-actionable-comments and missing-dependency blocker paths
+- [x] 8.2 Manually exercise `/jj-pr-fixup` against a scratch colocated repo with a real PR carrying review comments: confirm comment→brief mapping, PR-head basing, absorb placement, in-place PR update, and the no-actionable-comments and missing-dependency blocker paths
