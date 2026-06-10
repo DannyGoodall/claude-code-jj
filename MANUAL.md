@@ -8,8 +8,9 @@ Companion documents in this repo:
 - [JJ_OVERVIEW.md](JJ_OVERVIEW.md) — a primer on jj itself (colocated jj-on-git, the working-copy-as-commit model, workspaces vs git worktrees) for people new to it
 - [DESIGN.md](DESIGN.md) — the design rationale (why jj over GitButler and git worktrees), as an ADR
 - [ROADMAP.md](ROADMAP.md) — proposed-but-not-yet-built features, as OpenSpec proposals under `openspec/changes/`
+- [docs/case-studies/linkstack-walkthrough.md](docs/case-studies/linkstack-walkthrough.md) — **learn by walkthrough:** one beginner builds one tiny web app using every plugin feature, each with what you type in Claude and the jj/`gh`/Linear commands it abstracts
 
-New to jj? Read [JJ_OVERVIEW.md](JJ_OVERVIEW.md) first — this manual assumes the vocabulary.
+New to jj? Read [JJ_OVERVIEW.md](JJ_OVERVIEW.md) first — this manual assumes the vocabulary. Prefer learning by example? The [linkstack walkthrough](docs/case-studies/linkstack-walkthrough.md) runs through every feature as a story.
 
 ---
 

@@ -15,6 +15,7 @@ This is the jj successor to a Graphite/git-worktree orchestration.
 - [MANUAL.md](MANUAL.md) — operating the plugins: the orchestrator/worker contract, workspace lifecycle, `/jj-delegate`, the fan-out, `/jj-fleet`, `/jj-pr`, `/jj-openspec`, the Linear binding, the hooks, and a gotchas/troubleshooting table.
 - [DESIGN.md](DESIGN.md) — the design rationale (ADR): why jj over GitButler (shared-tree write race) and over git worktrees (restack-while-checked-out hazard).
 - [ROADMAP.md](ROADMAP.md) — the proposed-but-not-yet-built features (OpenSpec proposals under `openspec/changes/`).
+- [docs/case-studies/linkstack-walkthrough.md](docs/case-studies/linkstack-walkthrough.md) — **learn by example.** One beginner ("Sam") builds one tiny web app and, step by step, uses *every* feature of all three plugins — each with what you type in Claude and the jj/`gh`/Linear commands it abstracts. Start here if you'd rather see the tools in action than read reference docs.
 
 ## Plugins
 
