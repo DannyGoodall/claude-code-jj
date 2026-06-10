@@ -5,10 +5,11 @@ description: |
   belong to — the jj analog of the amend-after-review loop — in one
   orchestrator step. After a review pass leaves many small hunks in one working
   copy, each logically belonging to a different commit deeper in the stack,
-  `/jj-absorb` previews the placement with `jj absorb --dry-run`, runs the
-  mutating `jj absorb` to move each hunk into the closest downstack commit that
-  last touched those lines, reports where each hunk landed (keyed to the
-  destination change-id + description), and leaves any ambiguous hunk in the
+  `/jj-absorb` previews the placement (by `jj absorb --dry-run` where the
+  installed jj supports it, otherwise by an op-log review-and-undo fallback),
+  runs the mutating `jj absorb` to move each hunk into the closest downstack
+  commit that last touched those lines, reports where each hunk landed (keyed to
+  the destination change-id + description), and leaves any ambiguous hunk in the
   working copy with a named manual escape hatch. Accepts an optional fileset and
   optional `--into <rev>`/downstack-target to scope which changes are absorbed.
   Triggers: /jj-absorb, "absorb these fixes", "amend each commit after review",
@@ -16,9 +17,10 @@ description: |
   /jj-delegate. Orchestrator-only (reshapes the orchestrator's own stack); never
   invoked inside a worker, moves no bookmarks, performs no push, runs every
   command non-interactively (`--no-pager`, no `-i`). Requires a jj that ships
-  `jj absorb` and `jj absorb --dry-run`.
+  `jj absorb`; uses `--dry-run` for the pre-mutation preview when available and
+  otherwise an op-log (`jj op show -p` + `jj op restore`) review-and-undo fallback.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
   author: outfitter-style
 ---
 
@@ -33,6 +35,14 @@ mutable downstack commit that last modified those same lines. This skill is the
 deliberate wrapper around that primitive — it **previews** the placement, **runs**
 the absorb, and **reports** where each hunk landed, leaving any ambiguous hunk in
 the working copy for you to place by hand.
+
+The preview adapts to the installed jj. Where `jj absorb --dry-run` exists, the
+skill previews *before* mutating (§2). Where it does not (e.g. jj 0.42, which
+ships `jj absorb` without `--dry-run`), the skill gives the **same safety** the
+other way round — it records a reversible op-log checkpoint, runs the absorb,
+reviews the result via `jj op show -p`, and surfaces a one-command
+`jj op restore` undo (§3). Either way you can see the hunk-to-commit placement
+and back the whole thing out; a missing `--dry-run` is never a blocker.
 
 Substrate knowledge (jj command surface, revsets, filesets, non-interactive
 rules, output formats) comes from the installed `jj-vcs` skill — defer to it for
@@ -56,7 +66,9 @@ choreography.
   `--interactive`; never spawn an editor. Reads use `--ignore-working-copy`.
   The skill never opens an interactive hunk picker — ambiguous hunks are left
   for deliberate manual placement (see §5), never force-fitted.
-- **`jj absorb` (with `--dry-run`) must be supported** — preflight first (§1).
+- **`jj absorb` must be supported** — preflight first (§1). The `--dry-run` flag
+  is *optional*: its absence selects the op-log review-and-undo fallback (§3),
+  not a blocker.
 
 ## Arguments
 
@@ -76,24 +88,32 @@ choreography.
 Default behaviour is whole-working-copy absorb (`--from @`, `--into mutable()`),
 with the fileset and target purely optional scopes.
 
-## 1. Support preflight (fail fast, never hang, never improvise)
+## 1. Support preflight & mode selection (fail fast, never hang, never improvise)
 
-Before any absorb, confirm the installed `jj` ships `jj absorb` **and** its
-`--dry-run` flag — both are relatively recent. Probe non-interactively:
+Before any absorb, confirm the installed `jj` ships `jj absorb`, then detect
+whether it also ships `--dry-run` — that detection *selects the mode*, it does
+not gate the skill. Probe non-interactively:
 
 ```bash
 jj absorb --help --no-pager >/dev/null 2>&1 || echo "BLOCKER: jj absorb unsupported"
-jj absorb --help --no-pager 2>&1 | grep -q -- '--dry-run' || echo "BLOCKER: jj absorb --dry-run unsupported"
+if jj absorb --help --no-pager 2>&1 | grep -q -- '--dry-run'; then
+  MODE=dry-run     # §2: preview before mutating
+else
+  MODE=fallback    # §3: checkpoint → mutate → review via op show -p → surfaced undo
+fi
 ```
 
-If `jj absorb` is absent, **report a clear blocker and stop** — do not fall back
-to a different mutating command (e.g. a guessed `jj squash`). If `jj absorb`
-exists but `--dry-run` does not, that is equally a blocker for this skill, whose
-contract is preview-before-mutate: report it and stop rather than running an
-unpreviewed mutating absorb. `--help` returns promptly and never prompts, so
-this cannot hang.
+- If **`jj absorb` is absent**, report a clear blocker and **stop** — do not fall
+  back to a different mutating command (e.g. a guessed `jj squash`). This is the
+  only hard preflight blocker.
+- If **`jj absorb` exists but `--dry-run` does not**, this is **not** a blocker —
+  select `MODE=fallback` (§3). The skill still gives see-the-placement /
+  undo-if-wrong safety, via the operation log instead of a pre-run preview.
 
-## 2. Dry-run preview (always first, before any commits move)
+`--help` returns promptly and never prompts, so this cannot hang. Use the
+selected mode for §2 **or** §3 below; §4–§6 are shared.
+
+## 2. Dry-run mode — preview first, then mutate (`MODE=dry-run`)
 
 Run the dry-run, scoped to the optional fileset/target, and capture the plan:
 
@@ -109,7 +129,7 @@ lines, and the preview is the confirmation point.
 
 Record the plan as a map of `hunk (path + line range) → destination rev` for use
 in the landing report (§4). This dry-run plan, not the mutating run's stdout, is
-the source of truth for the report.
+the source of truth for the report in this mode.
 
 ### 2a. Nothing-to-absorb path
 
@@ -119,7 +139,7 @@ placeable), report **"nothing to absorb"** and **STOP** — do **not** run a
 mutating `jj absorb`. There is nothing to amend; surfacing that cleanly is the
 correct outcome.
 
-## 3. Mutating absorb (only after the dry-run plan exists)
+### 2b. Mutating absorb (only after the dry-run plan exists)
 
 Only once §2 has produced a plan with at least one placeable hunk, run the real
 absorb with the *same* scope:
@@ -130,14 +150,83 @@ jj absorb --no-pager [--from <rev>] [--into <rev>] [<fileset>...]
 
 jj moves each unambiguous hunk into its destination commit and leaves the rest
 in the source (working-copy) commit. If the source commit ends up empty and has
-no description, jj abandons it — that is expected.
+no description, jj abandons it — that is expected. Proceed to the shared landing
+report (§4).
+
+## 3. Fallback mode — checkpoint, mutate, review, surface undo (`MODE=fallback`)
+
+When `--dry-run` is unavailable, the placement cannot be previewed *before* the
+run — so make it **reviewable and reversible after** the run instead. jj's
+operation log makes the whole absorb a single, atomically-undoable operation;
+`jj absorb --help` itself points here ("The modification made by `jj absorb` can
+be reviewed by `jj op show -p`").
+
+### 3a. Capture the pre-absorb operation (the reversible checkpoint)
+
+Record the current operation id **before** mutating, so the entire absorb can be
+rolled back as one unit:
+
+```bash
+PRE_OP=$(jj op log --no-pager --no-graph -n1 -T 'id.short()')
+```
+
+This is the same op-log save point `/jj-checkpoint` records; for this transient,
+single-step use an inline capture is enough (no named manifest checkpoint
+needed). When an operator wants a *named, persisted* save point spanning a larger
+risky sequence, `/jj-checkpoint <label>` + `/jj-rewind` are the right tools and
+either satisfies the contract — what matters is that the undo is a real
+`jj op restore` to `PRE_OP`.
+
+### 3b. Run the mutating absorb
+
+```bash
+jj absorb --no-pager [--from <rev>] [--into <rev>] [<fileset>...]
+```
+
+Same scoping arguments as dry-run mode. jj distributes each unambiguous hunk and
+leaves the remainder in the working copy (§5), exactly as in §2b.
+
+### 3c. Review the placement via the operation log
+
+Read what the absorb operation actually did — which downstack commits it changed
+— and use it as the source of truth for the landing report (§4) in this mode:
+
+```bash
+jj op show -p --no-pager @          # the diff of the absorb operation just run
+```
+
+Map the changed commits to the per-hunk landing report (§4). When the op diff
+cannot be attributed to individual hunks cleanly, report the raw `jj op show -p`
+summary rather than inventing a mapping — the undo (§3d) keeps a mis-read
+non-destructive.
+
+### 3d. Surface the one-command undo (do NOT auto-undo)
+
+Present the placement **together with** the exact command that reverses the whole
+absorb, so the operator (or a calling skill like `/jj-pr-fixup`) can back it out
+if the placement is wrong:
+
+```
+undo this absorb:  jj op restore <PRE_OP>
+```
+
+Mirroring how dry-run mode lets the operator decline *before* mutating, fallback
+mode presents the result and the escape hatch *after* — it never auto-restores.
+
+### 3e. Nothing-to-absorb path (post-hoc)
+
+If `jj absorb` moved nothing (no hunk had a downstack home), `jj op show -p` of
+the absorb op shows no commit changed and the working copy is unchanged. Report
+**"nothing to absorb"**, note the no-op, and the captured `PRE_OP` simply never
+needs restoring.
 
 ## 4. Per-hunk landing report (derived, not scraped)
 
-Derive the report by **diffing the §2 dry-run plan against the post-run working
-copy** rather than parsing the mutating run's stdout — this is robust to absorb
-output-format drift across jj versions and cleanly separates absorbed from
-remaining hunks.
+Derive the report from the mode's placement source — the **§2 dry-run plan**
+(dry-run mode) or the **§3c `jj op show -p` diff** (fallback mode) — against the
+post-run working copy, rather than parsing the mutating run's stdout. This is
+robust to absorb output-format drift across jj versions and cleanly separates
+absorbed from remaining hunks.
 
 1. Inspect the working copy after the run:
 
@@ -146,9 +235,9 @@ remaining hunks.
    jj log --ignore-working-copy --no-pager -r 'mutable()'   # destinations + descriptions
    ```
 
-2. A hunk that was in the dry-run plan **and is no longer in the working copy**
-   was **absorbed** — to the rev the plan named. Look up that rev's change-id
-   and description (`jj log -r <rev> -T 'change_id.short() ++ " " ++ description.first_line()'`)
+2. A hunk that the placement source named **and that is no longer in the working
+   copy** was **absorbed** — to the rev named. Look up that rev's change-id and
+   description (`jj log -r <rev> -T 'change_id.short() ++ " " ++ description.first_line()'`)
    to key the report.
 3. A hunk that **remains in the working copy** is part of the remainder (§5).
 
@@ -164,12 +253,13 @@ absorbed:
 
 **Separate the absorbed hunks from the remainder** in the output — the report
 has two clearly labelled sections (`absorbed:` and `remaining (manual):`, §5).
+The report shape is identical in both modes; only its source differs.
 
 ## 5. Ambiguous remainder (left in place, never dropped or force-fitted)
 
 After the run, detect the hunks still in the working copy — the **ambiguous
 remainder** (no unambiguous downstack home, so jj left them in the source, which
-is jj's default and correct behaviour):
+is jj's default and correct behaviour, in both modes):
 
 ```bash
 jj diff --ignore-working-copy --no-pager        # everything still in @ after absorb
@@ -199,24 +289,31 @@ escape hatch is the contract-correct behaviour.
 
 Return a compact result the reconcile tail can surface:
 
-- **preflight** (absorb + dry-run supported / blocker).
-- **plan** (the dry-run hunk→commit placement, or "nothing to absorb").
+- **preflight / mode** (`jj absorb` supported; `dry-run` or `fallback` mode).
+- **plan** (the dry-run hunk→commit placement, the fallback `jj op show -p`
+  placement, or "nothing to absorb").
 - **absorbed** hunks, each keyed to destination change-id + description (§4).
 - **remaining (manual)** hunks, each with its named placement option (§5).
+- **undo** (fallback mode only) — the exact `jj op restore <PRE_OP>` that
+  reverses the whole absorb.
 
 ## Failure modes (each reported, none improvised)
 
-- **`jj absorb` / `--dry-run` unsupported** → up-front blocker, nothing run; no
-  fallback to a different mutating command (§1).
-- **Nothing to absorb** → reported cleanly, no mutating run (§2a).
+- **`jj absorb` unsupported** → up-front blocker, nothing run; no fallback to a
+  different mutating command (§1).
+- **`jj absorb --dry-run` unsupported** → *not* a blocker; selects fallback mode
+  (§3), which keeps see-placement / undo-if-wrong safety via the op log (§1).
+- **Nothing to absorb** → reported cleanly; no lingering mutation (dry-run §2a
+  short-circuits before mutating; fallback §3e observes the no-op).
 - **Surprising placement (multiple downstack commits touched the same lines)** →
-  the mandatory dry-run preview exposes the target before history moves (§2).
+  exposed by the dry-run preview before history moves (§2), or by `jj op show -p`
+  with a one-command `jj op restore` undo after (§3).
 - **Ambiguous remainder** → left in the working copy and surfaced with a named
   manual option; never dropped or force-fitted (§5).
 - **A jj command itself hangs** (a known jj rough edge in heavy use) → do not
   retry blindly and NEVER delete `.jj`; `jj op log` / `jj op restore` is the
   orchestrator-only recovery surface. (Absorb is reversible via `jj op restore`
-  if a placement turns out wrong.)
+  if a placement turns out wrong — the basis of fallback mode.)
 
 ## Where this is called
 
@@ -226,3 +323,6 @@ Return a compact result the reconcile tail can surface:
   pass leaves scattered fixes across a worker's integrated stack — it distributes
   the fixes into their downstack commits and reports the landings, before the
   push-and-PR step [`/jj-pr <bookmark>`](../jj-pr/SKILL.md).
+- [`jj-pr-fixup`](../jj-pr-fixup/SKILL.md) §5 composes `/jj-absorb` to land a
+  PR's review fixes into their owning commits — and inherits this fallback, so
+  the amend-after-review loop runs on a jj without `absorb --dry-run` too.
