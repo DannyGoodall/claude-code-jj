@@ -211,7 +211,10 @@ orchestrator's in §5–§6.
 
 After the worker reports, land its working-copy fixes into their owning
 downstack commits by invoking the [`/jj-absorb`](../jj-absorb/SKILL.md) step
-over the worker's fixes — do NOT re-derive placement here.
+over the worker's fixes — do NOT re-derive placement here. `/jj-absorb` adapts to
+the installed jj: on a jj that ships `jj absorb` without `--dry-run` it uses its
+op-log review-and-undo fallback, so this step completes there too — there is no
+`jj absorb --dry-run` dependency in the loop.
 
 - `/jj-absorb` previews with `jj absorb --dry-run`, runs the mutating
   `jj absorb`, and reports each hunk keyed to its **destination change-id +

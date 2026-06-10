@@ -104,7 +104,7 @@ ready for it, since a stalled worker's edits are already snapshotted).
 
 ## Status
 
-**jj-concurrent v0.7.0** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.3.0
+**jj-concurrent v0.7.1** · jj-concurrent-openspec v0.2.0 · jj-concurrent-linear v0.3.0
 — functionally validated, documented, and self-hosting (the plugin is now
 OpenSpec-managed and its features ship via its own jj workers).
 
@@ -118,7 +118,7 @@ and reconciled in one stack (see
 [the fan-out case study](docs/case-studies/fleet-fanout-2026-06-09.md)):
 
 - **`/jj-stacked-pr`** — derive the parent chain from a stitched jj stack and open/update one PR per bookmark, each based on its parent (true stacked PRs).
-- **`/jj-absorb`** — amend-after-review: preview with `jj absorb --dry-run`, distribute scattered working-copy hunks into their downstack commits, report where each landed.
+- **`/jj-absorb`** — amend-after-review: preview placement (by `jj absorb --dry-run` where available, else an op-log `jj op show -p` review + one-command `jj op restore` undo), distribute scattered working-copy hunks into their downstack commits, report where each landed.
 - **`/jj-checkpoint` + `/jj-rewind`** — record a named op-log save point before a risky integration, then roll the whole repo back to it via `jj op restore`.
 - **Guard role enforcement** — the guard hook now blocks `jj bookmark`/`jj git push` from a worker workspace (the orchestrator-only rule, previously contract-only), while still allowing them in the orchestrator's primary workspace.
 
@@ -199,7 +199,16 @@ v0.7.0 and linear v0.3.0 shipped together: **all four remaining roadmap proposal
 applied in one 4-worker fan-out**. Because each change added its own new skill
 file, the four worker branches were fully disjoint — reconciled by the
 orchestrator into a clean 3-PR stack (jj-concurrent skills / linear skills / docs)
-and landed via `/jj-land` with no cascade. The ROADMAP backlog is now empty.
+and landed via `/jj-land` with no cascade.
+
+**v0.7.1** (`jj-absorb-no-dry-run-fallback`) makes `/jj-absorb` — and, by
+composition, `/jj-pr-fixup` — run on a jj that ships `jj absorb` without
+`--dry-run` (e.g. 0.42, the current toolchain). The skill detects `--dry-run`
+support: where it exists, the preview-first path is unchanged; where it doesn't,
+it captures the pre-absorb op, runs `jj absorb`, reviews the placement via
+`jj op show -p`, and surfaces a one-command `jj op restore` undo — equivalent
+see-then-undo safety via the operation log. This unblocked the `jj-pr-fixup`
+live exercise on jj 0.42.
 
 **What's next** is captured as OpenSpec proposals — see [ROADMAP.md](ROADMAP.md).
 Deliberately deferred (see [DESIGN.md](DESIGN.md) "Open questions"):
