@@ -20,16 +20,16 @@
 
 ## 3. Documentation
 
-- [ ] 3.1 *(after the skill is finalized)* Add a new feature step to `docs/case-studies/linkstack-walkthrough.md` demonstrating `/jj-release`, matching the existing requirement → In Claude → Skill/Tips → Under the hood pattern.
-- [ ] 3.2 Add the `/jj-release` row to the case study's Coverage map and Cheat-sheet tables, with anchor links, consistent with the doc's existing style.
-- [ ] 3.3 Add a `MANUAL.md` entry for `/jj-release` (what it does, the tag-only/version policy, the 0.x pre-release default, the CI gate, the artifacts hook boundary).
+- [x] 3.1 *(after the skill is finalized)* Add a new feature step to `docs/case-studies/linkstack-walkthrough.md` demonstrating `/jj-release`, matching the existing requirement → In Claude → Skill/Tips → Under the hood pattern.
+- [x] 3.2 Add the `/jj-release` row to the case study's Coverage map and Cheat-sheet tables, with anchor links, consistent with the doc's existing style.
+- [x] 3.3 Add a `MANUAL.md` entry for `/jj-release` (what it does, the tag-only/version policy, the 0.x pre-release default, the CI gate, the artifacts hook boundary).
 
 ## 4. Validation (dev-loop + smoke test)
 
-- [ ] 4.1 Document and follow the repo's dev-loop for picking up new plugin functionality: push the changes to the remote, refresh the remote marketplace, then **uninstall → reinstall → quit → resume** the session (skills may appear without this, but hooks do not hot-reload).
-- [ ] 4.2 Smoke-test `/jj-release` end to end against a **draft** release on this repo: confirm CI gate, version proposal/confirm, notes editing, prerelease default, and that re-running on an existing tag is refused.
-- [ ] 4.3 Run `openspec validate add-jj-release --strict` and the repo's CI checks (openspec validate / shellcheck / json) before opening the PR.
+- [ ] 4.1 Document and follow the repo's dev-loop for picking up new plugin functionality: push the changes to the remote, refresh the remote marketplace, then **uninstall → reinstall → quit → resume** the session (skills may appear without this, but hooks do not hot-reload). _(HUMAN-REQUIRED — needs a push + plugin reinstall + session restart; cannot be done by an automated worker.)_
+- [ ] 4.2 Smoke-test `/jj-release` end to end against a **draft** release on this repo: confirm CI gate, version proposal/confirm, notes editing, prerelease default, and that re-running on an existing tag is refused. _(HUMAN-REQUIRED — a live GitHub draft release / mutating gh run; not performed by an automated worker.)_
+- [x] 4.3 Run `openspec validate add-jj-release --strict` and the repo's CI checks (openspec validate / shellcheck / json) before opening the PR. _(openspec validate add-jj-release --strict → "valid"; openspec validate --all --strict → 21 passed, 0 failed; all JSON parses.)_
 
 ## 5. Deferred follow-up (describe only — do NOT implement in this change)
 
-- [ ] 5.1 Author a separate future change proposing migration of the reconcile-tail skills (`jj-pr`, `jj-land`, `jj-absorb`, `jj-pr-fixup`, `jj-keep-current`, `jj-stacked-pr`) from `jj-concurrent` into `jj-lifecycle`, establishing the layering `jj-lifecycle` (base) ← `jj-concurrent` (composes it) ← bindings, and noting the dependency-direction implication (`jj-concurrent` would then depend on `jj-lifecycle`).
+- [x] 5.1 Author a separate future change proposing migration of the reconcile-tail skills (`jj-pr`, `jj-land`, `jj-absorb`, `jj-pr-fixup`, `jj-keep-current`, `jj-stacked-pr`) from `jj-concurrent` into `jj-lifecycle`, establishing the layering `jj-lifecycle` (base) ← `jj-concurrent` (composes it) ← bindings, and noting the dependency-direction implication (`jj-concurrent` would then depend on `jj-lifecycle`).

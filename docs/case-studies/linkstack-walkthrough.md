@@ -716,6 +716,63 @@ gh pr checks 19 --required       # ✗ red → ABORT (never use --admin to force
 #   → #19 left open; re-running resumes here
 ```
 
+## 21. Ship a release
+
+> **The requirement.** Linkstack has shipped a few milestones onto `main` and Sam wants to cut a real GitHub release — pick a version, write notes, decide pre-release, publish — without hand-tagging or accidentally shipping a red commit.
+
+**In Claude**
+
+```
+you:    cut a release
+claude: Target: main HEAD. CI on that commit: green (lint, test, json).
+        Last tag was v0.1.0; since then I see one feat: and two fix: commits,
+        so I propose a MINOR bump → v0.2.0. Generated notes from those commits.
+        v0.2.0 is in the 0.x range, so I'll mark it a pre-release by default.
+        Source-only (no artifacts command given).
+
+        RELEASE SUMMARY — review before publishing
+          version:     v0.2.0   (minor bump from v0.1.0 via feat:)
+          target:      <sha>  (main HEAD)
+          CI gate:     green — 3/3 checks passed
+          pre-release: ON  (0.x policy — say "not a pre-release" to override)
+          draft:       no
+          assets:      none (source-only)
+          notes:       ## Features … ## Fixes …
+        Publish this release? (go / no)
+you:    add a "Highlights" line at the top, then go
+claude: Re-rendered notes with the Highlights line. Publishing…
+        Released v0.2.0 → https://github.com/sam/linkstack/releases/tag/v0.2.0
+```
+
+> **🔧 Skill:** **`/jj-release`** (`jj-lifecycle`) — the "ship a milestone" step the everyday loop stops short of. It's **relay-shaped** like [§13](#13-idea-to-merged-in-one-command): do all the computable work (resolve the target, gate CI, propose a version, generate notes, gather assets), **halt at one go/no-go gate**, then publish only on "go". It's **tag-only** — the git tag *is* the version, so it never edits `plugin.json`/`package.json`/etc. The tag is created **server-side** by `gh release create --target <sha>` (so it works without native jj tagging and isn't blocked by the guard hook).
+> **💡 Tips:**
+> - The version is **always confirmed by you** — even a proposed bump waits at the gate. On a *first-ever* release there's nothing to bump from, so it asks you outright with no default; on non-conventional commit history it also just asks.
+> - The CI gate reads the **target commit's** checks (not a PR's — the PR is already merged by release time). A red or still-pending check **refuses** the release.
+> - **0.x versions default to pre-release ON** (SemVer says 0.x is unstable) — say "not a pre-release" at the gate to override. `1.x`+ is not pre-release by default.
+> - Re-releasing an existing tag is **refused**, not overwritten — tags are immutable; pick a new version.
+> - Need to attach built artifacts? Give it a **build command** and it runs that opaque command and uploads whatever files it emits — it ships no build logic of its own. With no command you get a clean source-only release.
+> - This skill lives in its **own `jj-lifecycle` plugin** — you can install it on its own, without any of the concurrency or OpenSpec plugins.
+
+**Under the hood**
+
+```bash
+# resolve the target sha (default = main HEAD), gate CI on the COMMIT, not a PR:
+gh api repos/sam/linkstack/commits/<sha>/check-runs   # all concluded success?
+gh api repos/sam/linkstack/commits/<sha>/status       # combined state == success?
+
+# propose a SemVer bump from conventional commits since the last tag:
+jj log -r 'v0.1.0..main' --no-graph -T 'description.first_line() ++ "\n"'
+#   a feat: → minor → v0.2.0  (you always confirm at the gate)
+
+# refuse if a release already exists for the tag (immutable):
+gh release view v0.2.0 --json tagName   # exists? → REFUSE, pick a new version
+
+# publish on "go" — server-side tag at the target sha, notes from a file:
+gh release create v0.2.0 --target <sha> --title v0.2.0 \
+  --notes-file <notes> --prerelease        # --prerelease ON because 0.x
+#   (append asset files only if a build command produced them)
+```
+
 ---
 
 # Appendix — when you grow
@@ -846,6 +903,7 @@ Every skill in one place — what you say, what it wraps.
 | Save constantly, block dangerous commands | *snapshot + guard hooks* | `jj util snapshot`; pre-command checks |
 | Open / update a PR | **`/jj-pr`** | `jj git push` + `gh pr create` |
 | Merge a PR or a stack, tidily | **`/jj-land`** | `gh pr merge` + fetch + cleanup |
+| Cut a GitHub release | **`/jj-release`** | CI-gate the commit → confirm version → `gh release create --target` |
 | File review fixes into the right commits | **`/jj-absorb`** | `jj absorb` |
 | Apply a PR's review comments in one go | **`/jj-pr-fixup`** | read comments → fix → `jj absorb` → push |
 | Save-point before something risky | **`/jj-checkpoint`** | remember a `jj op` id |
@@ -876,6 +934,7 @@ Proof that this walkthrough touches everything. Each plugin capability and each 
 | `jj-safety-hooks` (snapshot + guard) | [Setup](#setup-turning-a-folder-into-a-jj-on-github-project), [§1](#1-ship-a-dark-mode-button), [§6](#6-the-guardrail-youll-be-glad-about) |
 | `jj-github-pr` (`/jj-pr`) | [§1](#1-ship-a-dark-mode-button), [§3](#3-address-pr-comments-in-one-shot), [§15](#15-a-drive-by-bug-report-on-github) |
 | `jj-land` (`/jj-land`) | [§1](#1-ship-a-dark-mode-button) (no-CI), [§20](#20-land-a-stack--and-watch-ci-stop-a-bad-one) (CI + red-abort) |
+| `jj-release` (`/jj-release`) | [§21](#21-ship-a-release) |
 | `jj-absorb-fixup` (`/jj-absorb`) | [§2](#2-tidy-up-scattered-review-fixes), [§3](#3-address-pr-comments-in-one-shot) |
 | `jj-pr-fixup` (`/jj-pr-fixup`) | [§3](#3-address-pr-comments-in-one-shot) |
 | `jj-op-checkpoint` (`/jj-checkpoint`, `/jj-rewind`) | [§4](#4-a-risky-refactor-with-an-undo-button) |
@@ -903,7 +962,7 @@ Proof that this walkthrough touches everything. Each plugin capability and each 
 | **GitHub** issue | [§15](#15-a-drive-by-bug-report-on-github) |
 | **Linear** issues | [§16](#16-planned-work-tracked-in-linear), [§17](#17-turn-one-ready-linear-ticket-into-a-worker), [§A4](#a4-drain-a-whole-linear-board) |
 | **No CI** (large early span) | [Setup](#setup-turning-a-folder-into-a-jj-on-github-project)–[§17](#17-turn-one-ready-linear-ticket-into-a-worker) |
-| **CI added late** → CI-gated features | [§18](#18-time-to-add-ci), then [§19](#19-keep-a-branch-current-and-green), [§20](#20-land-a-stack--and-watch-ci-stop-a-bad-one) |
+| **CI added late** → CI-gated features | [§18](#18-time-to-add-ci), then [§19](#19-keep-a-branch-current-and-green), [§20](#20-land-a-stack--and-watch-ci-stop-a-bad-one), [§21](#21-ship-a-release) |
 
 > **A note on honesty:** this is an *illustrative* case study. "Sam", "linkstack", the PR numbers, and the Linear tickets are invented to make the features concrete. No real repository or Linear board was created. The commands in the "Under the hood" boxes are real and correct — they're what the plugin would run — but the transcripts are written, not captured.
 
