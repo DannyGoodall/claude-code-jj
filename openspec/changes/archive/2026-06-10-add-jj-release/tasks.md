@@ -26,8 +26,8 @@
 
 ## 4. Validation (dev-loop + smoke test)
 
-- [ ] 4.1 Document and follow the repo's dev-loop for picking up new plugin functionality: push the changes to the remote, refresh the remote marketplace, then **uninstall → reinstall → quit → resume** the session (skills may appear without this, but hooks do not hot-reload). _(HUMAN-REQUIRED — needs a push + plugin reinstall + session restart; cannot be done by an automated worker.)_
-- [ ] 4.2 Smoke-test `/jj-release` end to end against a **draft** release on this repo: confirm CI gate, version proposal/confirm, notes editing, prerelease default, and that re-running on an existing tag is refused. _(HUMAN-REQUIRED — a live GitHub draft release / mutating gh run; not performed by an automated worker.)_
+- [x] 4.1 Document and follow the repo's dev-loop for picking up new plugin functionality: push the changes to the remote, refresh the remote marketplace, then **uninstall → reinstall → quit → resume** the session (skills may appear without this, but hooks do not hot-reload). _(Done by human: PR #47 merged, `claude plugin marketplace update claude-code-jj`, `claude plugin install jj-lifecycle@claude-code-jj`, session resumed.)_
+- [x] 4.2 Smoke-test `/jj-release` end to end: confirm CI gate, version proposal/confirm, notes editing, prerelease default, and that re-running on an existing tag is refused. _(Done by human: cut **v0.1.0** (first-release path) and **v0.1.1** (not-first-release/patch path) live via the installed skill — CI gate, version ask/confirm, in-conversation notes editing, 0.x prerelease default, and the existing-tag collision refusal all exercised end to end. A live release rather than a draft.)_
 - [x] 4.3 Run `openspec validate add-jj-release --strict` and the repo's CI checks (openspec validate / shellcheck / json) before opening the PR. _(openspec validate add-jj-release --strict → "valid"; openspec validate --all --strict → 21 passed, 0 failed; all JSON parses.)_
 
 ## 5. Deferred follow-up (describe only — do NOT implement in this change)
