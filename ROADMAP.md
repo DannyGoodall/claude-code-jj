@@ -9,9 +9,37 @@ so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
 This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.7.1 /
-jj-concurrent-openspec v0.2.0 / jj-concurrent-linear v0.3.0 the backlog is
-**empty** — every proposed change has shipped. New ideas land here as OpenSpec
-proposals.
+jj-lifecycle v0.1.0 / jj-concurrent-openspec v0.2.0 / jj-concurrent-linear v0.3.0
+the backlog holds **one deferred item** — `migrate-lifecycle-skills` (below); every
+other proposed change has shipped. New ideas land here as OpenSpec proposals.
+
+## jj→GitHub lifecycle layering
+
+`migrate-lifecycle-skills` — **deferred, description-only** (a forward-looking note
+under [`openspec/changes/migrate-lifecycle-skills/`](openspec/changes/migrate-lifecycle-skills/),
+deliberately a `README.md` rather than a `proposal.md` so the strict
+`openspec validate` CI gate does not parse it as a ready change). It proposes
+migrating the solo-lifecycle reconcile-tail skills — `jj-pr`, `jj-land`,
+`jj-absorb`, `jj-pr-fixup`, `jj-keep-current`, `jj-stacked-pr` — out of
+`jj-concurrent` and into `jj-lifecycle`, so `jj-lifecycle` becomes the **base**
+layer (`jj-lifecycle` ← `jj-concurrent` ← the OpenSpec/Linear bindings) and a
+release-/PR-only user need not install the concurrency machinery. It is a
+cross-plugin refactor with real blast radius (marketplace entries, every relative
+skill link, the hook wiring, the reinstall/restart dev-loop) and must be promoted
+to a full change — rename to `proposal.md`, author design/specs/tasks — before any
+implementation.
+
+---
+
+**Recently shipped (jj-lifecycle v0.1.0)** — `add-jj-release`: the new standalone
+`jj-lifecycle` plugin and its first skill `/jj-release` (cut a GitHub release for
+the repo at a commit — relay-shaped prepare → human go/no-go gate → publish, with a
+CI gate on the target commit, an always-confirmed SemVer bump from conventional
+commits, tag-only `vMAJOR.MINOR.PATCH` versioning via `gh release create --target`,
+a `0.x → --prerelease` default, and an optional opaque artifacts hook). Decoupled
+from concurrency and OpenSpec, so it installs on its own. (The follow-up that would
+move the reconcile-tail skills into it is the deferred `migrate-lifecycle-skills`
+note above.)
 
 **Recently shipped (jj-concurrent v0.7.1)** — `jj-absorb-no-dry-run-fallback`:
 `/jj-absorb` (and, by composition, `/jj-pr-fixup`) now runs on a jj that ships
@@ -136,7 +164,9 @@ workspace/dev-env work is proposed.
 
 **Archive-time canonical-spec collisions** — when two queued changes touch the
 same canonical capability spec, archive them in sequence (not a blind fan-out) so
-the delta merges into one spec legibly. (The backlog is currently empty; this note
-is kept for the next time a family of related changes is queued. The v0.7.0 / linear
-v0.3.0 batch had no such collision at apply time — each change added its own new
-skill file — so all four applied as one disjoint fan-out.)
+the delta merges into one spec legibly. (The only open backlog item,
+`migrate-lifecycle-skills`, is a deferred description-only note with no specs, so it
+poses no collision today; this note is kept for the next time a family of related
+changes is queued. The v0.7.0 / linear v0.3.0 batch had no such collision at apply
+time — each change added its own new skill file — so all four applied as one
+disjoint fan-out.)
