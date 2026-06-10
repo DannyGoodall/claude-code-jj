@@ -8,10 +8,18 @@ the implementation breakdown. Shipped features live in the
 so these are applied the same way it builds everything else —
 `/jj-openspec apply <change-name>` on a jj workspace.
 
-This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.7.0 /
-jj-concurrent-openspec v0.2.0 / jj-concurrent-linear v0.3.0 there is
-**1 active proposal** — `jj-absorb-no-dry-run-fallback` (see Robustness &
-portability, below). New ideas land here as OpenSpec proposals.
+This is a backlog, not a commitment or an ordering. As of jj-concurrent v0.7.1 /
+jj-concurrent-openspec v0.2.0 / jj-concurrent-linear v0.3.0 the backlog is
+**empty** — every proposed change has shipped. New ideas land here as OpenSpec
+proposals.
+
+**Recently shipped (jj-concurrent v0.7.1)** — `jj-absorb-no-dry-run-fallback`:
+`/jj-absorb` (and, by composition, `/jj-pr-fixup`) now runs on a jj that ships
+`jj absorb` without `--dry-run` (e.g. 0.42). It detects `--dry-run`; where absent
+it captures the pre-absorb op, runs `jj absorb`, reviews placement via
+`jj op show -p`, and surfaces a one-command `jj op restore` undo. Validated live
+on jj 0.42 — including the full `/jj-pr-fixup` loop end-to-end, which closed that
+skill's last live-exercise task.
 
 **Recently shipped (jj-concurrent v0.7.0 + jj-concurrent-linear v0.3.0)** — the
 final batch: all four remaining proposals applied in one 4-worker fan-out and
@@ -77,11 +85,10 @@ three new proposals authored in the same four-worker fan-out (below).
 
 ## Robustness & portability
 
-Make the shipped skills run across the jj versions teams actually have installed.
-
-| Change | What it would add |
-|--------|-------------------|
-| [`jj-absorb-no-dry-run-fallback`](openspec/changes/jj-absorb-no-dry-run-fallback/) | Make `/jj-absorb` (and, by composition, `/jj-pr-fixup`) run on a jj that ships `jj absorb` without `--dry-run` (e.g. 0.42, the current toolchain). Detect `--dry-run` support; keep the preview-first path where it exists; otherwise capture the pre-absorb op, run `jj absorb`, review placement via `jj op show -p`, and surface a one-command `jj op restore` undo — equivalent see-then-undo safety via the operation log instead of a dry-run. Composes the existing `jj-op-checkpoint` surface; unblocks the `jj-pr-fixup` 8.2 live exercise here. |
+`jj-absorb-no-dry-run-fallback` — **shipped in v0.7.1** (see Recently shipped,
+above): `/jj-absorb` adapts to a jj without `absorb --dry-run` via an op-log
+review-and-undo fallback. Intentionally empty until new robustness/portability
+work is proposed.
 
 ## jj-native stack & history (git-flow parity)
 

@@ -34,7 +34,7 @@
 
 - [x] 7.1 Bump `plugins/jj-concurrent/.claude-plugin/plugin.json` version and update its description so the `/jj-absorb` clause reflects the dry-run-or-op-log-review behaviour
 - [x] 7.2 Update README/MANUAL `/jj-absorb` rows/sections to describe the fallback and drop any claim that `jj absorb --dry-run` is required; remove the "jj 0.42 lacks `absorb --dry-run` ⇒ /jj-absorb blocks" gotcha (now handled), replacing it with a note that the skill adapts
-- [ ] 7.3 Update ROADMAP (move this out of the active backlog on archive)
+- [x] 7.3 Update ROADMAP (move this out of the active backlog on archive)
 
 ## 8. Validation
 
