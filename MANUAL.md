@@ -25,6 +25,7 @@ New to jj? Read [JJ_OVERVIEW.md](JJ_OVERVIEW.md) first — this manual assumes t
 - [Concurrent fan-out: many workers](#concurrent-fan-out-many-workers)
 - [Watching the fleet: /jj-fleet](#watching-the-fleet-jj-fleet)
 - [Submitting a bookmark: /jj-pr](#submitting-a-bookmark-jj-pr)
+- [Cutting a release: /jj-release](#cutting-a-release-jj-release)
 - [Orchestrating OpenSpec changes: /jj-openspec](#orchestrating-openspec-changes-jj-openspec)
 - [Reporting to Linear: /jj-linear](#reporting-to-linear-jj-linear)
 - [The hooks (snapshot + guard)](#the-hooks-snapshot--guard)
@@ -53,6 +54,7 @@ One Claude session is the **orchestrator**, living in the repository's primary (
 | Skill: `jj-preview` | `plugins/jj-concurrent/skills/jj-preview/SKILL.md` | Stand up a throwaway dev environment from any commit/bookmark — provision an isolated `../wt-preview-<slug>` via `jj workspace add -r`, seed its env + a distinct port, run the app, report URL+PID, then tear down. Read-only to history (never bookmarks/pushes/archives). Orchestrator-only. |
 | Skill: `jj-pr-fixup` | `plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md` | The amend-after-review loop over an **already-open PR**: read the PR's review comments, fix them in a workspace based on the PR head, absorb each fix into the commit it belongs to (composing `/jj-absorb`), and re-push so the PR updates in place. Orchestrator-only; needs `gh`. |
 | Skill: `jj-keep-current` | `plugins/jj-concurrent/skills/jj-keep-current/SKILL.md` | Keep a stack current against a moved trunk: detect trunk advanced → `jj git fetch` → `jj rebase` the stack → push → re-check CI, and **gate landing behind a green required-checks signal** so a stale-but-green PR never lands. Orchestrator-only; needs `gh`. |
+| Skill: `jj-release` | `plugins/jj-lifecycle/skills/jj-release/SKILL.md` | Cut a GitHub release for the repo at one commit — relay-shaped prepare → go/no-go gate → publish. **Tag-only** (the tag *is* the version; no manifest edited), `vMAJOR.MINOR.PATCH`; SemVer bump auto-proposed but **always confirmed**; **CI gate on the target commit** (not a PR); **0.x → pre-release ON** by default; optional **opaque artifacts hook**; server-side tag via `gh release create --target`; **refuses** an existing tag. Ships in its **own `jj-lifecycle` plugin** — usable without the concurrency/OpenSpec plugins. Orchestrator-only; needs `gh`. |
 | Worker agent: `jj-workspace-worker` | `plugins/jj-concurrent/agents/jj-workspace-worker.md` | A constrained subagent: works in one workspace, jj only, never bookmarks/push/raw-git, with a structured JSON report. |
 | Snapshot hook | `plugins/jj-concurrent/hooks/scripts/jj-snapshot.sh` | PostToolUse on edits — runs `jj util snapshot` so an agent crash before its next jj command never loses the last edit. |
 | Guard hook | `plugins/jj-concurrent/hooks/scripts/jj-guard.sh` | PreToolUse on Bash — blocks raw mutating git, interactive jj, `rm` on the `.jj`/`.git` stores, and (v0.3.0) `jj bookmark`/`jj git push` from a worker workspace. Only enforces inside a jj repo. |
@@ -225,6 +227,35 @@ Given a bookmark it:
 3. generates a what / why / benefit body from the change's commits and, if present, the OpenSpec `proposal.md`.
 
 It is **orchestrator-only** — it owns refs and push, so it is never invoked inside a worker — and it is the reconcile-tail "submit" step for both `/jj-delegate` and `/jj-openspec apply`. Requires a colocated jj↔git repo with an `origin` remote and an authenticated `gh`.
+
+---
+
+## Cutting a release: /jj-release
+
+The reconcile tail ends at `/jj-land`: work gets merged, but nothing then cuts a GitHub **release**. `/jj-release` is that missing "ship a milestone" step, and it ships in its **own `jj-lifecycle` plugin** — a release-only user can install just that plugin, without any of the concurrency or OpenSpec plugins. It is **relay-shaped**: a PREPARE phase does everything computable, then a **single human go/no-go gate**, then a PUBLISH phase that runs only on "go".
+
+```text
+you: /jj-release
+claude: [target = main HEAD; CI gate on that COMMIT's check-runs — green]
+        [last tag v0.1.0; a feat: since → propose v0.2.0; 0.x → pre-release ON]
+        RELEASE SUMMARY (version, target, CI, pre-release, draft, assets, notes)
+        Publish? (go / no)
+you: go
+        → gh release create v0.2.0 --target <sha> --notes-file … --prerelease
+        → https://github.com/you/repo/releases/tag/v0.2.0
+```
+
+The policies worth knowing:
+
+- **Tag-only versioning.** The git **tag is the version** — `/jj-release` creates the tag and the release and **edits no file**. It never bumps `plugin.json`/`package.json`/`Cargo.toml`. Repo manifest versions may diverge from the release tag; that is acceptable by design (it neither reads them for mutation nor reconciles them). Tag format is `vMAJOR.MINOR.PATCH`.
+- **Version is always confirmed.** A SemVer bump is auto-proposed from conventional commits since the last tag (`feat`→minor, `fix`→patch, breaking/`!`→major), but the human **always** confirms or overrides at the gate — even an argument-supplied version is still confirmed. On a **first release** (no prior tag) it offers **no default** and asks outright; on non-conventional history it also just asks.
+- **0.x → pre-release ON by default.** GitHub does not infer pre-release from the version string; this is the skill's **policy** (SemVer says 0.x is unstable). `1.x`+ defaults to OFF. Either way the flag shows in the gate summary and is overridable there.
+- **CI gate on the target commit.** By release time the originating PR is merged, so the gate reads the **commit's** check-runs and combined status (`gh api repos/{owner}/{repo}/commits/{sha}/check-runs` and `…/status`), **not** `gh pr checks`. A red or still-pending check **refuses** the release (a manual release outside the plugin remains the user's prerogative).
+- **Refuses an existing release.** Tags are immutable; unlike `/jj-pr`'s create-or-update, `/jj-release` **refuses** when a release for the tag already exists and asks for a new version — it never overwrites a published artifact.
+- **Artifacts hook boundary.** Attaching built assets is **optional and opaque**: supply a project's build command and the skill runs it and uploads whatever files it emits — it **ships no build logic of its own** and never interprets how anything is built. With no command you get a clean source-only release (GitHub's auto-generated source archive).
+- **Server-side tag creation.** The tag is created on the remote at the target sha via `gh release create <tag> --target <sha>` — sidestepping jj 0.42's missing native tag creation and the guard hook's block on raw `git tag`.
+
+It is **orchestrator-only** and **non-interactive** (`--no-pager`, no `-i`, no editor — human input arrives only through the relay gate); it makes no commit, edits no file, and force-pushes nothing. Requires a colocated jj↔git repo with an `origin` remote and an authenticated `gh` with release-create scope.
 
 ---
 
