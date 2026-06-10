@@ -1,8 +1,8 @@
 ## 1. New `jj-lifecycle` plugin scaffold
 
-- [ ] 1.1 Create `plugins/jj-lifecycle/.claude-plugin/plugin.json` with `name: jj-lifecycle`, `version: 0.1.0`, and a description scoped to "solo jj→GitHub lifecycle (release, …)".
-- [ ] 1.2 Register `jj-lifecycle` in `.claude-plugin/marketplace.json` (new entry under `plugins`, `source: ./plugins/jj-lifecycle`).
-- [ ] 1.3 Create the `plugins/jj-lifecycle/skills/jj-release/` directory for the skill.
+- [x] 1.1 Create `plugins/jj-lifecycle/.claude-plugin/plugin.json` with `name: jj-lifecycle`, `version: 0.1.0`, and a description scoped to "solo jj→GitHub lifecycle (release, …)".
+- [x] 1.2 Register `jj-lifecycle` in `.claude-plugin/marketplace.json` (new entry under `plugins`, `source: ./plugins/jj-lifecycle`).
+- [x] 1.3 Create the `plugins/jj-lifecycle/skills/jj-release/` directory for the skill.
 
 ## 2. Author the `/jj-release` skill
 

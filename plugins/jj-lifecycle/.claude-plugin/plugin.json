@@ -1,0 +1,5 @@
+{
+  "name": "jj-lifecycle",
+  "version": "0.1.0",
+  "description": "Solo jj→GitHub lifecycle skills for Claude Code, decoupled from concurrency and OpenSpec: the jj-release step (cut a GitHub release for the repo at a commit — relay-shaped prepare→go/no-go gate→publish, tag-only vMAJOR.MINOR.PATCH versioning with an always-confirmed SemVer bump, release notes generated from commits/PRs and editable in-conversation, a CI gate read off the target commit's check-runs/status, a 0.x→--prerelease-ON policy, an optional opaque artifacts hook, and server-side tag creation via gh release create --target; orchestrator-only, non-interactive, refuses to overwrite an existing release). Installable on its own — no concurrency or OpenSpec plugin required."
+}

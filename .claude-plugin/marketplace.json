@@ -23,6 +23,11 @@
       "name": "jj-concurrent-linear",
       "source": "./plugins/jj-concurrent-linear",
       "description": "Linear binding over jj-concurrent: at the orchestrator's reconcile point, maps each worker's structured JSON report to its Linear sub-issue (in-progress → done on a clean finish, blocker/conflict comments otherwise), threading umbrella + sub-issue IDs from dispatch keyed by workspace path. Separate, separately-enabled binding; enable only in Linear-tracked repos. Requires the jj-concurrent plugin and a configured Linear MCP server. No issue creation, no PR cross-linking; the worker stays Linear-agnostic."
+    },
+    {
+      "name": "jj-lifecycle",
+      "source": "./plugins/jj-lifecycle",
+      "description": "Solo jj→GitHub lifecycle skills, decoupled from concurrency and OpenSpec: /jj-release cuts a GitHub release for the repo at a commit — relay-shaped prepare→go/no-go gate→publish, tag-only vMAJOR.MINOR.PATCH versioning with an always-confirmed SemVer bump, notes generated from commits/PRs and editable in-conversation, a CI gate read off the target commit's check-runs/status, a 0.x→--prerelease-ON policy, an optional opaque artifacts hook, and server-side tag creation via gh release create --target; orchestrator-only, non-interactive, refuses to overwrite an existing release. Installable on its own — no concurrency or OpenSpec plugin required."
     }
   ]
 }
