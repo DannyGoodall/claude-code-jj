@@ -6,17 +6,17 @@
 
 ## 2. Author the `/jj-release` skill
 
-- [ ] 2.1 Write `plugins/jj-lifecycle/skills/jj-release/SKILL.md` front-matter (name, description, trigger phrases) following the voice/shape of existing `jj-concurrent` skills.
-- [ ] 2.2 Document **Preconditions**: orchestrator-only; colocated jj↔git repo with `origin`; `gh` authenticated with release scope; non-interactive substrate (`--no-pager`, no `-i`, no editor).
-- [ ] 2.3 Implement the **dependency preflight** (`gh` present + authenticated; `origin` remote present) reporting clear blockers before any work.
-- [ ] 2.4 Implement **target resolution** (default trunk HEAD) and the **CI gate** reading commit-level check-runs + combined status (`gh api repos/{owner}/{repo}/commits/{sha}/check-runs` and `.../commits/{sha}/status`); refuse on red/pending with a clear message. *(spec: CI gate on the target commit)*
-- [ ] 2.5 Implement **version proposal**: detect last tag; if none, ask for the initial version with no default; else auto-propose a SemVer bump from conventional commits and ALWAYS require confirm/override; degrade to asking on non-conventional history. Enforce `vMAJOR.MINOR.PATCH` tag format. *(spec: SemVer bump proposal; First-release handling; Tag-only versioning)*
-- [ ] 2.6 Implement **notes generation** (commits/PRs since last tag) with in-conversation editing before the gate; support an optional GitHub **draft** preview. *(spec: Release notes generation and editing)*
-- [ ] 2.7 Implement the **0.x → `--prerelease` ON** default, overridable at the gate. *(spec: Pre-release default for 0.x)*
-- [ ] 2.8 Implement the **optional artifacts hook**: run a project-supplied command if provided, collect emitted files, list them at the gate, upload on publish; ship no build logic. *(spec: Optional opaque artifacts hook)*
-- [ ] 2.9 Implement the **relay gate**: present version, target sha, notes, prerelease flag, draft flag, asset list; publish only on explicit "go"; make no changes on "no". *(spec: Relay-shaped release flow)*
-- [ ] 2.10 Implement **publish** via `gh release create <tag> --target <sha> --notes-file … [--prerelease] [--draft] [assets…]` (server-side tag creation); **refuse** if a release for the tag already exists. *(spec: Server-side tag creation; Refuse to overwrite an existing release)*
-- [ ] 2.11 Add a **report-shaped result** (version, target, CI verdict, prerelease/draft, assets, release URL or the blocker/refusal reason) and a **Failure modes** section, matching the family's conventions.
+- [x] 2.1 Write `plugins/jj-lifecycle/skills/jj-release/SKILL.md` front-matter (name, description, trigger phrases) following the voice/shape of existing `jj-concurrent` skills.
+- [x] 2.2 Document **Preconditions**: orchestrator-only; colocated jj↔git repo with `origin`; `gh` authenticated with release scope; non-interactive substrate (`--no-pager`, no `-i`, no editor).
+- [x] 2.3 Implement the **dependency preflight** (`gh` present + authenticated; `origin` remote present) reporting clear blockers before any work.
+- [x] 2.4 Implement **target resolution** (default trunk HEAD) and the **CI gate** reading commit-level check-runs + combined status (`gh api repos/{owner}/{repo}/commits/{sha}/check-runs` and `.../commits/{sha}/status`); refuse on red/pending with a clear message. *(spec: CI gate on the target commit)*
+- [x] 2.5 Implement **version proposal**: detect last tag; if none, ask for the initial version with no default; else auto-propose a SemVer bump from conventional commits and ALWAYS require confirm/override; degrade to asking on non-conventional history. Enforce `vMAJOR.MINOR.PATCH` tag format. *(spec: SemVer bump proposal; First-release handling; Tag-only versioning)*
+- [x] 2.6 Implement **notes generation** (commits/PRs since last tag) with in-conversation editing before the gate; support an optional GitHub **draft** preview. *(spec: Release notes generation and editing)*
+- [x] 2.7 Implement the **0.x → `--prerelease` ON** default, overridable at the gate. *(spec: Pre-release default for 0.x)*
+- [x] 2.8 Implement the **optional artifacts hook**: run a project-supplied command if provided, collect emitted files, list them at the gate, upload on publish; ship no build logic. *(spec: Optional opaque artifacts hook)*
+- [x] 2.9 Implement the **relay gate**: present version, target sha, notes, prerelease flag, draft flag, asset list; publish only on explicit "go"; make no changes on "no". *(spec: Relay-shaped release flow)*
+- [x] 2.10 Implement **publish** via `gh release create <tag> --target <sha> --notes-file … [--prerelease] [--draft] [assets…]` (server-side tag creation); **refuse** if a release for the tag already exists. *(spec: Server-side tag creation; Refuse to overwrite an existing release)*
+- [x] 2.11 Add a **report-shaped result** (version, target, CI verdict, prerelease/draft, assets, release URL or the blocker/refusal reason) and a **Failure modes** section, matching the family's conventions.
 
 ## 3. Documentation
 
