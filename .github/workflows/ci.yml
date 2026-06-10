@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  openspec:
+    name: openspec validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install openspec
+        run: npm install -g @fission-ai/openspec@^1.4
+      - name: Validate all specs and changes
+        run: openspec validate --all --strict
+
+  shellcheck:
+    name: shellcheck hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint hook scripts (error severity)
+        run: shellcheck -S error plugins/*/hooks/scripts/*.sh
+
+  json:
+    name: json manifests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate plugin/marketplace JSON parses
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for f in .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json; do
+            echo "checking $f"
+            python3 -m json.tool "$f" > /dev/null
+          done
