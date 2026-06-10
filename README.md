@@ -1,11 +1,8 @@
 # claude-code-jj
 
-Concurrent multi-agent orchestration for Claude Code on **[Jujutsu (jj)](https://github.com/jj-vcs/jj)** workspaces.
+**claude-code-jj** is a quality-of-life plugin family for Claude Code that smooths everyday work across **GitHub**, **OpenSpec**, and **Linear** — with **concurrent multi-agent orchestration** powering it underneath. A standout is the **OpenSpec integration**: it parallelizes a change by splitting its tasks across multiple agents while *protecting the specification itself* — disjoint task-group ownership so agents never clobber each other's work, plus spec-validation discipline at both ends (a pre-flight health check before work starts and a verify gate before anything lands).
 
-Run many Claude agents on many changes at once — each agent in its own jj
-**workspace** (physical file isolation), commits auto-snapshotted so nothing is
-lost to a crash, and integration that **never halts** because jj conflicts are
-first-class objects rather than a blocked merge.
+It all runs on **[Jujutsu (jj)](https://github.com/jj-vcs/jj)** workspaces, whose lock-free, conflict-tolerant model is what makes the parallelism safe: each agent works in its own workspace (physical file isolation), commits are auto-snapshotted so nothing is lost to a crash, and integration **never halts** because jj conflicts are first-class objects rather than a blocked merge.
 
 This is the jj successor to a Graphite/git-worktree orchestration.
 
@@ -15,7 +12,7 @@ This is the jj successor to a Graphite/git-worktree orchestration.
 - [MANUAL.md](MANUAL.md) — operating the plugins: the orchestrator/worker contract, workspace lifecycle, `/jj-delegate`, the fan-out, `/jj-fleet`, `/jj-pr`, `/jj-openspec`, the Linear binding, the hooks, and a gotchas/troubleshooting table.
 - [DESIGN.md](DESIGN.md) — the design rationale (ADR): why jj over GitButler (shared-tree write race) and over git worktrees (restack-while-checked-out hazard).
 - [ROADMAP.md](ROADMAP.md) — the proposed-but-not-yet-built features (OpenSpec proposals under `openspec/changes/`).
-- [docs/case-studies/linkstack-walkthrough.md](docs/case-studies/linkstack-walkthrough.md) — **learn by example.** One beginner ("Sam") builds one tiny web app and, step by step, uses *every* feature of all three plugins — each with what you type in Claude and the jj/`gh`/Linear commands it abstracts. Start here if you'd rather see the tools in action than read reference docs.
+- [docs/case-studies/linkstack-walkthrough.md](docs/case-studies/linkstack-walkthrough.md) — **learn by example.** One beginner ("Sam") builds one tiny web app and, step by step, uses *every* feature of all four plugins — each with what you type in Claude and the jj/`gh`/Linear commands it abstracts. Start here if you'd rather see the tools in action than read reference docs.
 
 ## Plugins
 
@@ -24,6 +21,7 @@ This is the jj successor to a Graphite/git-worktree orchestration.
 | **`jj-concurrent`** | The core. Skills: **`jj-delegate`** (orchestrator/worker lifecycle), **`jj-fleet`** (one at-a-glance status view of all in-flight workers), **`jj-pr`** (push a bookmark + create/update its GitHub PR — the "submit" jj lacks), **`jj-stacked-pr`** (one based PR per bookmark from a stitched stack), **`jj-land`** (land a PR stack bottom-up, CI-gated, retargeting each base to trunk), **`jj-absorb`** (amend-after-review: distribute scattered hunks into their downstack commits), **`jj-checkpoint`** / **`jj-rewind`** (record a named op-log save point before a risky step, then roll back to it), **`jj-preview`** (stand up a throwaway dev environment from any commit/bookmark, then tear it down). Plus the `jj-workspace-worker` agent, a **snapshot hook** (`jj util snapshot` after every edit — closes jj's crash-before-snapshot gap), and a **guard hook** (blocks raw mutating git, interactive jj, and `rm` on the `.jj`/`.git` stores; also enforces the orchestrator-only rule — a worker may not run `jj bookmark`/`jj git push`). Workflow-agnostic. |
 | **`jj-concurrent-openspec`** | `jj-openspec` skill — backgrounds an OpenSpec verb (`apply` / `propose` / `new` / `ff` / `relay`) in its own jj workspace, mapping verb → shape → reconcile tail. `apply` can **fan out** across a change's separable `tasks.md` groups, run a **multi-change pipeline** over a *set* of changes (concurrent siblings → independent landings or a stitched stack), and runs `/opsx:verify` as a **gate** that auto-archives on green; `relay` chains author → human go/no-go → apply in one command; a pre-flight **health check** validates artifacts before dispatch. Enable only in OpenSpec repos. |
 | **`jj-concurrent-linear`** | `jj-linear` skill — Linear binding over the orchestrator, two halves meeting on the agent-plan manifest: at **dispatch**, auto-create an umbrella issue + one sub-issue per worker and thread their IDs into the manifest; at **reconcile**, map each worker's report to its sub-issue (in-progress → done / blocker comment), post a four-section umbrella summary, and raise a human-gate sub-issue on a manual signal. Separate, separately-enabled binding; enable only in Linear-tracked repos (requires a configured Linear MCP server). |
+| **`jj-lifecycle`** | Solo jj→GitHub lifecycle, **decoupled from concurrency and OpenSpec** so it installs on its own. Skill: **`jj-release`** — cut a GitHub release for the repo at a commit, relay-shaped (prepare → human go/no-go gate → publish): a **CI gate** read off the target commit's checks, a SemVer bump **auto-proposed from conventional commits and always confirmed** (asks outright on a first release), release notes generated from commits/PRs and **editable in conversation**, **tag-only** `vMAJOR.MINOR.PATCH` versioning (no manifest is touched), a `0.x → --prerelease` policy, and an optional opaque artifacts hook. The tag is created **server-side** via `gh release create --target`, sidestepping jj's missing tag creation and the guard hook; refuses to overwrite an existing release. |
 
 This marketplace does **not** vendor a jj command reference — it depends on the
 excellent read-only [`jj-vcs@toolbox`](https://github.com/schpet/toolbox/tree/main/plugins/jj-vcs)
@@ -52,15 +50,24 @@ the fan-out, local jj — works without it.
 ## Install
 
 ```bash
-# from this marketplace (local clone or GitHub)
-claude plugin marketplace add /path/to/claude-code-jj   # or DannyGoodall/claude-code-jj
-claude plugin install jj-concurrent@claude-code-jj
-claude plugin install jj-concurrent-openspec@claude-code-jj   # only for OpenSpec repos
+# 1. register the marketplace (GitHub, or a local clone path)
+claude plugin marketplace add DannyGoodall/claude-code-jj   # or /path/to/claude-code-jj
+
+# 2. refresh it — also how you pick up new plugin versions later
+claude plugin marketplace update claude-code-jj
+
+# 3. install the plugins you want (each is independent)
+claude plugin install jj-concurrent@claude-code-jj             # orchestration core + GitHub reconcile tail
+claude plugin install jj-lifecycle@claude-code-jj              # /jj-release — standalone, no concurrency needed
+claude plugin install jj-concurrent-openspec@claude-code-jj    # only for OpenSpec repos
 claude plugin install jj-concurrent-linear@claude-code-jj      # only for Linear-tracked repos
 ```
 
-Restart Claude Code after installing. The hooks (snapshot + guard) take effect
-in sessions started after install.
+Restart Claude Code after installing. Newly installed **skills** and the **hooks**
+(snapshot + guard) only take effect in sessions started after install — an
+already-running session won't see them, even for a brand-new plugin. (`/jj-release`
+in `jj-lifecycle` ships no hooks, so for that plugin the restart only registers the
+skill.)
 
 ## Quick start
 
