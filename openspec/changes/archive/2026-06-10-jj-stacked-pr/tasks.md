@@ -35,5 +35,5 @@
 ## 7. Validation
 
 - [x] 7.1 Run `openspec validate jj-stacked-pr` and resolve any structural errors
-- [ ] 7.2 Manually exercise `/jj-stacked-pr` against a scratch colocated repo with a 3-change stack: fresh create (correct bases + comment), re-run after amending a lower change (idempotent), reorder (bases re-pointed), and drop a change (orphan reported); confirm a missing-comment-surface degradation report
+- [x] 7.2 Manually exercise `/jj-stacked-pr` against a scratch colocated repo with a 3-change stack: fresh create (correct bases + comment), re-run after amending a lower change (idempotent), reorder (bases re-pointed), and drop a change (orphan reported); confirm a missing-comment-surface degradation report
   - DEFERRED (orchestrator): live PR exercise requires authenticated `gh`, a pushable `origin`, and ref/push operations the worker contract forbids; run at integration/reconcile.

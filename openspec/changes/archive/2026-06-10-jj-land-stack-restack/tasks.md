@@ -23,4 +23,4 @@
 ## 5. Validation
 
 - [x] 5.1 Run `openspec validate jj-land-stack-restack` and resolve any issues
-- [ ] 5.2 Exercise live: land a ≥2-PR shared-file stack and confirm (a) merges wait for mergeability, (b) with the `--merge` default no upper PR conflicts, and (c) under `--method squash` the post-merge restack keeps the tail clean — all with zero remote stragglers (PARTIAL: this run's recovery validated the behaviour BY HAND on the #16–#19 shared-file stack — mergeability-wait, `--merge` no-conflict, and a manual restack all worked — but the run with the *installed* fixed `/jj-land` is pending its reinstall)
+- [x] 5.2 Exercise live: land a ≥2-PR shared-file stack and confirm (a) merges wait for mergeability, (b) with the `--merge` default no upper PR conflicts, and (c) under `--method squash` the post-merge restack keeps the tail clean — all with zero remote stragglers (PARTIAL: this run's recovery validated the behaviour BY HAND on the #16–#19 shared-file stack — mergeability-wait, `--merge` no-conflict, and a manual restack all worked — but the run with the *installed* fixed `/jj-land` is pending its reinstall)

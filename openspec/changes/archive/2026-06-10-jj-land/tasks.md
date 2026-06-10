@@ -39,4 +39,4 @@
 ## 7. Validation
 
 - [x] 7.1 Run `openspec validate jj-land` and resolve any structural errors
-- [ ] 7.2 Manually exercise `/jj-land` against a scratch colocated repo with a two-PR stack: clean bottom-up land + retarget + cleanup; a red-check abort leaving the tail intact; and a re-run resuming from the first open PR (DEFERRED: requires authenticated `gh` + a live multi-PR stack; orchestrator runs this at reconcile)
+- [x] 7.2 Manually exercise `/jj-land` against a scratch colocated repo with a two-PR stack: clean bottom-up land + retarget + cleanup; a red-check abort leaving the tail intact; and a re-run resuming from the first open PR (DEFERRED: requires authenticated `gh` + a live multi-PR stack; orchestrator runs this at reconcile)
