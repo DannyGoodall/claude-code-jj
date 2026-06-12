@@ -164,25 +164,11 @@ genuine error line is never matched:
 
 This is the one documented place the allow-list lives; the filter fails **open**
 (unknown line shown) rather than **closed**, so allow-list drift produces
-visible noise rather than hidden errors. A concrete shell realisation of the
-wrapper (used non-interactively):
-
-```bash
-# run an openspec/opsx command, drop only known-harmless stderr, keep exit code
-opsx_filtered() {
-  command -v openspec >/dev/null 2>&1 || {
-    echo "BLOCKER: openspec CLI not found on PATH" >&2; return 127; }
-  local err; err="$( { "$@" 2>&1 1>&3 3>&-; } 3>&1 )"; local code=$?
-  printf '%s\n' "$err" \
-    | grep -v -e "Rules for 'tasks' must be an array" \
-              -e "Unknown artifact ID in rules" >&2
-  return $code
-}
-# usage: opsx_filtered openspec validate <change> --no-pager
-```
-
-(The agent may instead apply the same allow-list/exit-code discipline inline —
-the table above is the source of truth, not this snippet.)
+visible noise rather than hidden errors. A concrete shell realisation ships
+with this skill at [`scripts/opsx_filtered.sh`](scripts/opsx_filtered.sh) —
+source it, then `opsx_filtered openspec validate <change>`. (The agent may
+instead apply the same allow-list/exit-code discipline inline — the table above
+is the source of truth, not the script.)
 
 ### Step 3 — Act on the result
 
@@ -583,145 +569,41 @@ A change `add-export` has this `tasks.md`:
 - [ ] 2.2 Add a usage example to `docs/examples/export.md`
 ```
 
-`/jj-openspec apply add-export` resolves the verb (apply → implementing) and the
-change, derives bookmark `feat/add-export`, and bases on the proposal revision.
+`/jj-openspec apply add-export` resolves apply → implementing, derives bookmark
+`feat/add-export`, and bases on the proposal revision. §A finds Group 1
+(`src/api/**`) and Group 2 (`docs/**`) disjoint, independent, and non-trivial ⇒
+**fan-out**: two concurrent `jj-delegate` siblings on the same bookmark/base,
+each running `/opsx:apply add-export` scoped to ONLY its own group's tasks and
+ticks. At reconcile (§5) the disjoint edits — including the disjoint `tasks.md`
+tick hunks — merge cleanly onto the one `feat/add-export` branch, and the
+verify → archive → push/PR tail runs **once** over the combined result,
+identical to what a single worker would have produced. (Overlapping areas or a
+stated ordering dependency would have routed to the single-worker path
+instead.)
 
-**Separability detection (§A):** Group 1's file area is `src/api/**`; Group 2's
-is `docs/**`. The areas are **disjoint**, neither group's prose states a
-dependency on the other, both groups are non-trivial — so the separable set is
-`{Group 1, Group 2}`, ≥2, gate met ⇒ **fan-out**.
-
-**Dispatch (§4b):** two concurrent siblings to `jj-delegate`, both on
-`feat/add-export` / the proposal base-rev:
-
-- Worker A — `/opsx:apply add-export`, instructed to implement ONLY group 1's
-  tasks and tick ONLY 1.1/1.2.
-- Worker B — `/opsx:apply add-export`, instructed to implement ONLY group 2's
-  tasks and tick ONLY 2.1/2.2.
-
-**Reconcile (§5):** as each reports, jj-delegate integrates its commits onto the
-one `feat/add-export` branch. Worker A's `src/api/**` edits and Worker B's
-`docs/**` edits are disjoint ⇒ no conflict. In `tasks.md`, A ticked lines 1.1/1.2
-and B ticked lines 2.1/2.2 — disjoint hunks ⇒ they merge cleanly into a single
-fully-ticked `tasks.md`. The verify GATE → archive → push/PR tail then runs
-**once** over the combined branch (see the worked example below).
-
-The resulting branch is identical to what a single worker would have produced —
-all four tasks done on `feat/add-export` — only the work was distributed across
-two workspaces. (Had Group 2 also touched `src/api/**`, or said "after the API
-lands", detection would mark them non-separable and apply would run the
-single-worker path instead.)
-
-## Worked example: the verify GATE (green archives + opens a PR; non-green holds)
-
-Both branches start the same: `/jj-openspec apply <change>` provisions the
-worker(s), and jj-delegate integrates their commits onto the one change branch.
-Then the orchestrator runs the gate (§5) **once** over the reconciled branch.
-
-**Green apply — archives, then opens a PR.** `/opsx:verify <change>` over the
-reconciled branch reports an unambiguous green (every scenario/task satisfied).
-The orchestrator continues the tail: it runs `/opsx:archive <change>`, which
-syncs the change's delta specs into `openspec/specs/` and moves
-`openspec/changes/<change>/` to `openspec/changes/archive/<change>/` — captured
-as commits on the **same** change branch. It then runs `/jj-pr <bookmark>`,
-pushing the bookmark and opening the GitHub PR over the lifecycle-complete
-result (updated canonical specs + archived change), and reports: change,
-bookmark, PR URL, `verify: green`, `archived: yes`. A human reviews and merges
-one PR that already reflects the closed lifecycle — no manual archive follow-up.
-
-**Failing apply — holds the change un-pushed with a reported reason.**
-`/opsx:verify <change>` over the reconciled branch reports a failure (say,
-scenario `payment refunds a captured charge` has no implementation, and task
-`3.2 wire the refund webhook` is ticked but absent). The gate **stops the tail
-immediately**: the orchestrator runs **no** `/opsx:archive`, **no**
-trunk-advance, **no** `jj git push`, opens **no** PR. The integrated change sits
-on its bookmark, un-pushed, for inspection. The orchestrator reports it as data:
-`verify: failed`, the failing scenario(s)/task(s), and the change/bookmark
-holding the un-pushed work — so a human or a follow-up `/jj-openspec apply
-<change>` can fix the gap. Nothing reached trunk or a PR. (A flaky/inconclusive
-verify takes this same fail-safe stop-and-report path.)
-
-## Worked example: a set of independent changes landed concurrently
-
-Three ready changes — `add-export`, `add-import`, `tidy-logs` — touch disjoint
-areas with no inter-change dependency.
-
-`/jj-openspec apply add-export add-import tidy-logs` resolves the verb (apply →
-implementing) and the **set** (§B). Each is confirmed to exist and be apply-ready
-(`openspec status … --json`); the confirmed set is `{add-export, add-import,
-tidy-logs}`, width 3 ⇒ **pipeline** (§4c).
-
-**Dispatch (§4c):** three concurrent siblings to `jj-delegate`, each a whole
-change on its OWN bookmark and OWN proposal base-rev:
-
-- Worker 1 — `/opsx:apply add-export` on `feat/add-export`, based on
-  add-export's proposal revision.
-- Worker 2 — `/opsx:apply add-import` on `feat/add-import`, based on
-  add-import's proposal revision.
-- Worker 3 — `/opsx:apply tidy-logs` on `feat/tidy-logs`, based on tidy-logs'
-  proposal revision.
-
-**Reconcile (§P):** no dependency declared ⇒ **independent landings**. As each
-worker reports, jj-delegate integrates it onto trunk and that change's OWN §5
-verify → `/jj-pr` tail runs over its OWN result. If `tidy-logs` reports a
-blocker, `add-export` and `add-import` still land and verify; `tidy-logs` is
-reported **failed** with its workspace left intact. Pipeline summary:
-`add-export → landed (PR #N)`, `add-import → landed (PR #M)`,
-`tidy-logs → failed (blocker: …, workspace intact)`.
-
-## Worked example: a declared-dependency stitched stack
-
-Two changes where `add-export-ui` declares a dependency on `add-export-api`
-(the UI needs the API's types).
-
-`/jj-openspec apply add-export-api add-export-ui` with the declared dependency
-`add-export-ui → add-export-api`. The set is ≥2 apply-ready ⇒ pipeline (§4c);
-each is dispatched as a concurrent sibling on its own bookmark/proposal-rev.
-
-**Reconcile (§P):** a dependency is declared ⇒ **stitched stack**. The
-topological order is `add-export-api` below `add-export-ui`. After each member's
-own §5 verify, the pipeline stacks them in that order and opens the PRs via
-`/jj-stacked-pr` (base of `feat/add-export-ui` = `feat/add-export-api`, base of
-`feat/add-export-api` = trunk). Pipeline summary:
-`add-export-api → stacked (base trunk)`, `add-export-ui → stacked (base
-add-export-api)`. (Had the two declared a *cycle*, §P step 3 would abort stacking
-with an explicit error rather than invent an order.)
+Three more worked examples — the verify GATE (green vs failing), a set of
+independent changes landed concurrently, and a declared-dependency stitched
+stack — live in [references/examples.md](references/examples.md).
 
 ## Two orthogonal concurrency axes (pipeline vs fan-out)
-
-The `apply` shape has two independent concurrency axes that compose without
-coupling:
 
 | Axis | Skill / section | Unit of work | Bookmarks | Reconcile |
 |------|-----------------|--------------|-----------|-----------|
 | **Across-changes** (pipeline) | this binding §B/§4c/§P | one whole change per worker | one per change | independent landings or stitched stack + pipeline summary |
 | **Within-a-change** (fan-out) | `openspec-apply-fan-out` §A/§4b/§5 | one tasks.md group per worker | one shared change bookmark | reconcile-into-one-change branch |
 
-They are **orthogonal**: the pipeline operates BETWEEN changes (one worker per
-change, distinct bookmarks/revisions); fan-out operates INSIDE one change
-(several workers per change, one shared bookmark). A pipeline member MAY itself
-fan out internally, and neither policy needs to know about the other. Use the
-pipeline to land a backlog of independent ready changes concurrently; use
-fan-out to parallelize the disjoint task groups *within* one of those changes.
+The pipeline operates BETWEEN changes (one worker per whole change, distinct
+bookmarks/revisions); fan-out operates INSIDE one change (several workers, one
+shared bookmark). They compose without coupling: a pipeline member MAY itself
+fan out internally, and neither policy needs to know about the other. (Full
+rationale: root `DESIGN.md` §Concurrency axes.)
 
 ## Fallback guarantee (identical end result)
 
-Fan-out is **always** an optimization, never a correctness requirement. The
-single-worker distribution (§4a) is the default and the fallback for **every**
-non-fan-out case: one task group, overlapping file areas, a stated ordering
-dependency, an undeterminable area, an ungrouped `tasks.md`, the gate not met,
-or any verb other than `apply`. Whichever distribution runs, the reconciled
-change branch ends with the **same** completed tasks and the **same** verify →
-push/PR tail — fan-out only changes how the work is distributed, never the
-result. If fan-out detection is ever unsure, it resolves to single-worker.
-
-The **pipeline** carries the same guarantee on the across-changes axis. It is
-**always** an optimization, never a correctness requirement: it engages only
-when §B confirms ≥2 distinct apply-ready changes. The **single-change apply**
-(§4a) is the default and the fallback for **every** sub-threshold case — a single
-change, an empty set after exclusions, or a set that reduces to one after
-de-duplication / overlap exclusion. Applying a change via the pipeline yields
-the **same reconciled result** for that change as applying it on its own; the
-pipeline only changes that several changes are applied concurrently, never any
-individual change's outcome. If the resolved set ever reduces below two, apply
-runs the single-change path with no pipeline overhead.
+Both axes are **always** an optimization, never a correctness requirement:
+fan-out falls back to the single-worker distribution (§4a) and the pipeline to
+the single-change apply whenever their gates are unmet, and when detection is
+unsure it resolves to the fallback. Whichever distribution runs, each change
+ends with the **same** completed tasks and the **same** verify → push/PR tail —
+the axes change only how work is distributed, never any change's outcome.
+(Full rationale: root `DESIGN.md` §Concurrency axes.)

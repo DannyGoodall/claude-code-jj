@@ -153,3 +153,38 @@ The one-line shift: **a worktree pins a branch and the failure mode is a hard, b
 - Parallel agents on jj workspaces (geirsson): <https://geirsson.com/jj-workspaces>
 - Substrate reference plugin (depend, unmodified): <https://github.com/schpet/toolbox/tree/main/plugins/jj-vcs>
 - Minimal solo-agent jj skill (vocabulary precedent): <https://github.com/danverbraganza/jujutsu-skill>
+
+## Concurrency axes (jj-openspec: pipeline vs fan-out) — full rationale
+
+Compressed in the jj-openspec SKILL.md (§Two orthogonal concurrency axes,
+§Fallback guarantee); preserved here in full.
+
+The `apply` shape has two independent concurrency axes that compose without
+coupling. They are **orthogonal**: the pipeline operates BETWEEN changes (one
+worker per change, distinct bookmarks/revisions); fan-out operates INSIDE one
+change (several workers per change, one shared bookmark). A pipeline member MAY
+itself fan out internally, and neither policy needs to know about the other.
+Use the pipeline to land a backlog of independent ready changes concurrently;
+use fan-out to parallelize the disjoint task groups *within* one of those
+changes.
+
+Fan-out is **always** an optimization, never a correctness requirement. The
+single-worker distribution is the default and the fallback for **every**
+non-fan-out case: one task group, overlapping file areas, a stated ordering
+dependency, an undeterminable area, an ungrouped `tasks.md`, the gate not met,
+or any verb other than `apply`. Whichever distribution runs, the reconciled
+change branch ends with the **same** completed tasks and the **same** verify →
+push/PR tail — fan-out only changes how the work is distributed, never the
+result. If fan-out detection is ever unsure, it resolves to single-worker.
+
+The **pipeline** carries the same guarantee on the across-changes axis. It is
+**always** an optimization, never a correctness requirement: it engages only
+when the change-set resolution confirms ≥2 distinct apply-ready changes. The
+**single-change apply** is the default and the fallback for **every**
+sub-threshold case — a single change, an empty set after exclusions, or a set
+that reduces to one after de-duplication / overlap exclusion. Applying a change
+via the pipeline yields the **same reconciled result** for that change as
+applying it on its own; the pipeline only changes that several changes are
+applied concurrently, never any individual change's outcome. If the resolved
+set ever reduces below two, apply runs the single-change path with no pipeline
+overhead.
