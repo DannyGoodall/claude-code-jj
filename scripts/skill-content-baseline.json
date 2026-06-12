@@ -1,0 +1,871 @@
+{
+ "02058b3731e8eb30": {
+  "content": "{ W \u2192 { umbrellaId, subIssueId: S } }",
+  "kind": "fence",
+  "preview": "{ W \u2192 { umbrellaId, subIssueId: S } }",
+  "sources": [
+   "plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md"
+  ]
+ },
+ "026da2615cccfa71": {
+  "content": "# Per-workspace held change-id, description, and conflict indicator at @:\njj log --ignore-working-copy --no-pager -r <workspace's @>\n# Workspace list + stale indicator:\njj workspace list --no-pager",
+  "kind": "fence",
+  "preview": "# Per-workspace held change-id, description, and conflict indicator at @:",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-fleet/SKILL.md"
+  ]
+ },
+ "02914c9b52d185cf": {
+  "content": "{ workspacePath \u2192 { issueId, issueUrl } }",
+  "kind": "fence",
+  "preview": "{ workspacePath \u2192 { issueId, issueUrl } }",
+  "sources": [
+   "plugins/jj-concurrent-linear/skills/jj-from-linear/SKILL.md"
+  ]
+ },
+ "0505821abc5b0dc0": {
+  "content": "for ws in <workspace paths>; do\njj -R \"$ws\" util snapshot\ndone",
+  "kind": "fence",
+  "preview": "for ws in <workspace paths>; do",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-fleet/SKILL.md"
+  ]
+ },
+ "05fb992b17b00087": {
+  "content": "{ workspacePath \u2192 { umbrellaId, subIssueId } }",
+  "kind": "fence",
+  "preview": "{ workspacePath \u2192 { umbrellaId, subIssueId } }",
+  "sources": [
+   "plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md"
+  ]
+ },
+ "1108235f6b9dc9a6": {
+  "content": "jj bookmark track <bookmark> --remote=origin --no-pager   # one-time; not re-run when tracked",
+  "kind": "fence",
+  "preview": "jj bookmark track <bookmark> --remote=origin --no-pager   # one-time; not re-run",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "1131455aa93906cd": {
+  "content": "# Default method: --merge for a MULTI-PR stack, --squash for a single-PR land.\n# --merge preserves each PR's commit identity, so once a lower PR merges an upper\n# PR's already-merged lower commits are recognised and it shows only its OWN diff\n# \u2014 no shared-file re-conflict (see \u00a74.5). An explicit --method always overrides.\ngh pr merge <pr> --merge                          # multi-PR stack default\n#   single-PR land: --squash; --squash/--rebase on a stack \u21d2 restack (\u00a74.5)\n#   NEVER --admin, NEVER force; NEVER --delete-branch (colocated gotcha below)",
+  "kind": "fence",
+  "preview": "# Default method: --merge for a MULTI-PR stack, --squash for a single-PR land.",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "1132fea0309ee36f": {
+  "content": "jj workspace forget <workspace-name>\nrm -rf ../wt-<slug>            # the directory only \u2014 NEVER the repo .jj",
+  "kind": "fence",
+  "preview": "jj workspace forget <workspace-name>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-delegate/SKILL.md"
+  ]
+ },
+ "1259788d6aeb8cba": {
+  "content": "stack:   feat/api \u2192 feat/ui  (top: feat/ui)\ntrunk:   main  (moved: yes \u2014 rebase produced conflicts)\nconflicts:\nxkqp  feat/ui: update export  \u2014 src/export.ts, src/index.ts\nverdict: not-landable  (rebase-conflicted)  \u2014 not pushed",
+  "kind": "fence",
+  "preview": "stack:   feat/api \u2192 feat/ui  (top: feat/ui)",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "1afb8324b50e4afe": {
+  "content": "released: v0.8.0\ntarget:   <sha>  (main HEAD)\nCI:       green (lint, test, json)\nflags:    pre-release=on  draft=no\nassets:   source-only\nurl:      https://github.com/org/repo/releases/tag/v0.8.0",
+  "kind": "fence",
+  "preview": "released: v0.8.0",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "1d455cdfb14a7ad8": {
+  "content": "# default target = trunk HEAD; resolve to a concrete commit sha (read-only jj)\njj log -r '<trunk-or-target>' --ignore-working-copy --no-pager --no-graph \\\n-T 'commit_id ++ \"\\n\"'",
+  "kind": "fence",
+  "preview": "# default target = trunk HEAD; resolve to a concrete commit sha (read-only jj)",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "1e2c94fc149f8880": {
+  "content": "comments: 3 actionable (1 resolved thread excluded)\nbase:     kostkqrq  (PR head feat/add-export)\nworker:   done\nabsorbed:\nsrc/auth.ts (40-47)  \u2192 kostkqrq  feat: validate session token\nREADME (12-14)       \u2192 nvrnonuw  docs: document the config flag\npr:       updated  https://github.com/org/repo/pull/42",
+  "kind": "fence",
+  "preview": "comments: 3 actionable (1 resolved thread excluded)",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md"
+  ]
+ },
+ "20814259f93e8a87": {
+  "content": "jj rebase -b <top> -d <trunk> --no-pager",
+  "kind": "fence",
+  "preview": "jj rebase -b <top> -d <trunk> --no-pager",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "21ae258738acc47c": {
+  "content": "| Axis | Skill / section | Unit of work | Bookmarks | Reconcile |\n|------|-----------------|--------------|-----------|-----------|\n| **Across-changes** (pipeline) | this binding \u00a7B/\u00a74c/\u00a7P | one whole change per worker | one per change | independent landings or stitched stack + pipeline summary |\n| **Within-a-change** (fan-out) | `openspec-apply-fan-out` \u00a7A/\u00a74b/\u00a75 | one tasks.md group per worker | one shared change bookmark | reconcile-into-one-change branch |",
+  "kind": "table",
+  "preview": "| Axis | Skill / section | Unit of work | Bookmarks | Reconcile |",
+  "sources": [
+   "plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md"
+  ]
+ },
+ "21d41737358e5982": {
+  "content": "/jj-checkpoint <label> [note...]",
+  "kind": "fence",
+  "preview": "/jj-checkpoint <label> [note...]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md"
+  ]
+ },
+ "222360648c3a7abe": {
+  "content": "gh api \"repos/<owner>/<repo>/commits/<sha>/check-runs\" \\\n--jq '.check_runs[] | {name, status, conclusion}'\ngh api \"repos/<owner>/<repo>/commits/<sha>/status\" \\\n--jq '{state, statuses: [.statuses[] | {context, state}]}'",
+  "kind": "fence",
+  "preview": "gh api \"repos/<owner>/<repo>/commits/<sha>/check-runs\" \\",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "25fa24bd7afd5d97": {
+  "content": "gh pr view <pr> --json state --jq '.state'        # expect: MERGED",
+  "kind": "fence",
+  "preview": "gh pr view <pr> --json state --jq '.state'        # expect: MERGED",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "2aceea18fd5c159b": {
+  "content": "stack:   feat/api \u2192 feat/ui  (top: feat/ui)\ntrunk:   main  (moved: yes \u2014 rebased onto a1b2c3, pushed feat/api, feat/ui)\nci gate: required checks \u2014 2 success, 0 pending  \u21d2 green\nverdict: landable",
+  "kind": "fence",
+  "preview": "stack:   feat/api \u2192 feat/ui  (top: feat/ui)",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "2e43edb35f66ff22": {
+  "content": "/jj-pr <bookmark>      # bookmark = the PR head branch",
+  "kind": "fence",
+  "preview": "/jj-pr <bookmark>      # bookmark = the PR head branch",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md"
+  ]
+ },
+ "2f2a72277f006999": {
+  "content": "absorbed:\nsrc/auth.ts (lines 40-47)   \u2192 kostkqrq  feat: validate session token\nsrc/auth.ts (lines 88-91)   \u2192 kostkqrq  feat: validate session token\nREADME config note (12-14)  \u2192 nvrnonuw  docs: document the config flag",
+  "kind": "fence",
+  "preview": "absorbed:",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "314a437fc258ae85": {
+  "content": "{\n\"label\": \"pre-fanout-integration\",\n\"op_id\": \"<absolute op id from \u00a72>\",\n\"timestamp\": \"<ISO-8601 time of recording>\",\n\"note\": \"before rebasing auth+billing onto trunk\"\n}",
+  "kind": "fence",
+  "preview": "{",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md"
+  ]
+ },
+ "3d72777ed4d7934d": {
+  "content": "jj workspace add -r <rev> ../wt-preview-<slug>     # -r required; never default",
+  "kind": "fence",
+  "preview": "jj workspace add -r <rev> ../wt-preview-<slug>     # -r required; never default",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-preview/SKILL.md"
+  ]
+ },
+ "40be95d6577cf989": {
+  "content": "jj bookmark list --all-remotes --ignore-working-copy --no-pager <bookmark>\n# Look for an `<bookmark>@origin` tracking entry. If the bookmark exists locally\n# but has no @origin tracking line, it is UNTRACKED against origin.",
+  "kind": "fence",
+  "preview": "jj bookmark list --all-remotes --ignore-working-copy --no-pager <bookmark>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "425b6e37abc3a51e": {
+  "content": "gh release view \"v<version>\" --json url,isDraft,isPrerelease,tagName \\\n--jq '{url, isDraft, isPrerelease, tagName}'",
+  "kind": "fence",
+  "preview": "gh release view \"v<version>\" --json url,isDraft,isPrerelease,tagName \\",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "42e456eb7a6ea235": {
+  "content": "| Section | Source |\n|---|---|\n| **What changed** | worker report `changes` list (+ PR title/diff from the reconcile tail when present) |\n| **Root cause(s)** | worker report `notes`; plus `blocked_on` / `conflicts_seen` text when the worker reported blocked or conflicted |\n| **Test results** | worker report `tests_run` + the `jj-openspec-binding` verify outcome (pass/fail) |\n| **PR link** | reconcile-tail push/PR output when a PR was opened; else **\"no PR\"** with the integrated change-id(s) |",
+  "kind": "table",
+  "preview": "| Section | Source |",
+  "sources": [
+   "plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md"
+  ]
+ },
+ "461a41bfd5ba3f39": {
+  "content": "<!-- jj-stack:start -->\n**Stack** (bottom \u2192 top):\n1. <bm-root> \u2014 <pr-url-root>\n2. <bm-1> \u2014 <pr-url-1> \ud83d\udc48 (this PR)\n3. <bm-tip> \u2014 <pr-url-tip>\n<!-- jj-stack:end -->",
+  "kind": "fence",
+  "preview": "<!-- jj-stack:start -->",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "468f580e7d568fb3": {
+  "content": "remaining (manual):\nsrc/util.ts (lines 5-9) \u2014 touched by two downstack commits; ambiguous.\nplace with:  jj squash --into <rev> 'src/util.ts'   (or shape a fresh change)",
+  "kind": "fence",
+  "preview": "remaining (manual):",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "4a7a2864737f49a7": {
+  "content": "jj absorb --dry-run --no-pager [--from <rev>] [--into <rev>] [<fileset>...]",
+  "kind": "fence",
+  "preview": "jj absorb --dry-run --no-pager [--from <rev>] [--into <rev>] [<fileset>...]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "4c703da12a71ef16": {
+  "content": "command -v gh >/dev/null 2>&1 || echo \"BLOCKER: gh not installed\"\ngh auth status 2>&1            # non-zero / \"not logged into\" \u21d2 blocker",
+  "kind": "fence",
+  "preview": "command -v gh >/dev/null 2>&1 || echo \"BLOCKER: gh not installed\"",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md",
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md",
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md",
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md",
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "4cfd6639be65667b": {
+  "content": "gh pr checks <ref> --required --json bucket,state,name   # required checks\n# if NONE are marked required, fall back to all checks:\ngh pr checks <ref>            --json bucket,state,name",
+  "kind": "fence",
+  "preview": "gh pr checks <ref> --required --json bucket,state,name   # required checks",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "4f5c0d520c55c1ea": {
+  "content": "gh release create \"v<version>\" \\\n--target \"<sha>\" \\\n--title \"v<version>\" \\\n--notes-file \"<notes-file>\" \\\n[--prerelease] \\\n[--draft] \\\n[<asset-file> ...]              # only when an artifacts hook produced files",
+  "kind": "fence",
+  "preview": "gh release create \"v<version>\" \\",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "5295d1bbf413800d": {
+  "content": "gh release view \"v<version>\" --json tagName 2>/dev/null \\\n&& echo \"REFUSE: release v<version> already exists \u2014 choose a new version\"",
+  "kind": "fence",
+  "preview": "gh release view \"v<version>\" --json tagName 2>/dev/null \\",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "5f42e502b2d5af15": {
+  "content": "jj op restore <stored-op-id> --no-pager",
+  "kind": "fence",
+  "preview": "jj op restore <stored-op-id> --no-pager",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-rewind/SKILL.md"
+  ]
+ },
+ "5f75cf742e31b170": {
+  "content": "jj git fetch --no-pager                                  # pull the merged commit onto trunk\njj rebase -s <next-bookmark> -d <trunk>                  # jj rebases by change-diff \u2192\n#   a shared-file change re-applies cleanly\njj git push -b <each remaining tail bookmark> --no-pager # update the open PRs to clean commits",
+  "kind": "fence",
+  "preview": "jj git fetch --no-pager                                  # pull the merged commi",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "6066a708e707fefc": {
+  "content": "/jj-stacked-pr <tip-bookmark> [--draft]\n/jj-stacked-pr <bm-root> <bm-1> \u2026 <bm-tip> [--draft]",
+  "kind": "fence",
+  "preview": "/jj-stacked-pr <tip-bookmark> [--draft]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "6106d423eac9fed7": {
+  "content": "stack (bottom \u2192 top):\n1. feat/data-layer   created  base=main          https://github.com/org/repo/pull/40\n2. feat/api          created  base=feat/data-layer  https://github.com/org/repo/pull/41\n3. feat/ui           updated  base=feat/api      https://github.com/org/repo/pull/42\nre-points: (none)\norphans:   (none)\nstack comment: posted/updated on all 3 PRs",
+  "kind": "fence",
+  "preview": "stack (bottom \u2192 top):",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "65026788e06fbc0e": {
+  "content": "# commits since the last tag, read-only (jj revset: baseline tag .. target)\njj log -r '<baseline-tag>..<target>' --ignore-working-copy --no-pager --no-graph \\\n-T 'description.first_line() ++ \"\\n\"'",
+  "kind": "fence",
+  "preview": "# commits since the last tag, read-only (jj revset: baseline tag .. target)",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "6623ba16ba9699ea": {
+  "content": "jj workspace forget <preview-workspace-name>    # non-interactive",
+  "kind": "fence",
+  "preview": "jj workspace forget <preview-workspace-name>    # non-interactive",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-preview/SKILL.md"
+  ]
+ },
+ "68ad5ceb651fc552": {
+  "content": "jj log -r <bookmark> --no-pager --ignore-working-copy \\\n-T 'description ++ \"\\n\"' --no-graph",
+  "kind": "fence",
+  "preview": "jj log -r <bookmark> --no-pager --ignore-working-copy \\",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "6a2564f4cadeb549": {
+  "content": "command -v gh >/dev/null 2>&1 || echo \"BLOCKER: gh not installed\"\ngh auth status 2>&1            # non-zero / \"not logged into\" \u21d2 blocker\ngh repo view --json nameWithOwner --jq .nameWithOwner 2>&1   # confirms origin + repo resolution",
+  "kind": "fence",
+  "preview": "command -v gh >/dev/null 2>&1 || echo \"BLOCKER: gh not installed\"",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "6a79be955c365fdc": {
+  "content": "/jj-keep-current [<top-bookmark>] [--trunk <bookmark>] \\\n[--poll-interval <seconds>] [--max-attempts <n>]",
+  "kind": "fence",
+  "preview": "/jj-keep-current [<top-bookmark>] [--trunk <bookmark>] \\",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "6c5a557ef4f5ee45": {
+  "content": "/jj-pr <bookmark> [--issue <N>] [--base <branch>] [--draft] [--change <name>]",
+  "kind": "fence",
+  "preview": "/jj-pr <bookmark> [--issue <N>] [--base <branch>] [--draft] [--change <name>]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "6ed1aff26f98887d": {
+  "content": "# local bookmark\njj bookmark delete <name> --no-pager\n# remote head branch \u2014 explicit, since the merge no longer passes --delete-branch.\n# Resolve <owner>/<repo> once: gh repo view --json nameWithOwner --jq .nameWithOwner\ngh api -X DELETE \"repos/<owner>/<repo>/git/refs/heads/<branch>\"",
+  "kind": "fence",
+  "preview": "# local bookmark",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "717c617693d4131e": {
+  "content": "jj log --no-pager --ignore-working-copy -r @ --no-graph -T 'commit_id ++ \"\\n\"'\njj bookmark list --no-pager --ignore-working-copy",
+  "kind": "fence",
+  "preview": "jj log --no-pager --ignore-working-copy -r @ --no-graph -T 'commit_id ++ \"\\n\"'",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-preview/SKILL.md"
+  ]
+ },
+ "740252bb6bb2ac3a": {
+  "content": "restored to: pre-fanout-integration  (<stored-op-id>)\nnew op id:    <post-restore op id>\nto undo this rewind:  jj op restore <pre-rewind op id> --no-pager",
+  "kind": "fence",
+  "preview": "restored to: pre-fanout-integration  (<stored-op-id>)",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-rewind/SKILL.md"
+  ]
+ },
+ "7719c860c8f55c8d": {
+  "content": "gh pr list --head <bookmark> --state open --json number,url --jq '.[0].url'",
+  "kind": "fence",
+  "preview": "gh pr list --head <bookmark> --state open --json number,url --jq '.[0].url'",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "77a51407e6950304": {
+  "content": "preview:  http://localhost:<port>\nrev:      <rev>  (commit <commit-id>)\nworktree: ../wt-preview-<slug>\npid:      <pid>\nteardown: stop pid <pid> \u2192 jj workspace forget <name> \u2192 rm -rf ../wt-preview-<slug>",
+  "kind": "fence",
+  "preview": "preview:  http://localhost:<port>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-preview/SKILL.md"
+  ]
+ },
+ "77d4f611f4fd0d1d": {
+  "content": "jj log -r 'trunk()..<tip> & bookmarks()' \\\n--ignore-working-copy --no-pager --no-graph --reversed \\\n-T 'bookmarks ++ \"\\n\"'",
+  "kind": "fence",
+  "preview": "jj log -r 'trunk()..<tip> & bookmarks()' \\",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "7c7dc3351dc75a87": {
+  "content": "jj op log --no-pager --limit 1 -T 'id ++ \"\\n\"' --no-graph",
+  "kind": "fence",
+  "preview": "jj op log --no-pager --limit 1 -T 'id ++ \"\\n\"' --no-graph",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md",
+   "plugins/jj-concurrent/skills/jj-rewind/SKILL.md"
+  ]
+ },
+ "7c86e8170b93f902": {
+  "content": "bookmark: feat/add-export  (tracked now)\npush:     ok\npr:       updated  https://github.com/org/repo/pull/42",
+  "kind": "fence",
+  "preview": "bookmark: feat/add-export  (tracked now)",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "80681cd92c50ae42": {
+  "content": "A \u2192 T   (trunk / default branch)\nB \u2192 A\nC \u2192 B",
+  "kind": "fence",
+  "preview": "A \u2192 T   (trunk / default branch)",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "8321ed4d6b0186ff": {
+  "content": "jj absorb --help --no-pager >/dev/null 2>&1 || echo \"BLOCKER: jj absorb unsupported\"\nif jj absorb --help --no-pager 2>&1 | grep -q -- '--dry-run'; then\nMODE=dry-run     # \u00a72: preview before mutating\nelse\nMODE=fallback    # \u00a73: checkpoint \u2192 mutate \u2192 review via op show -p \u2192 surfaced undo\nfi",
+  "kind": "fence",
+  "preview": "jj absorb --help --no-pager >/dev/null 2>&1 || echo \"BLOCKER: jj absorb unsuppor",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "84d51a7b92e38ae6": {
+  "content": "| Report condition | Inline update to the worker's issue |\n|---|---|\n| `blocked_on` null **AND** `conflicts_seen` null (clean finish) | transition the issue **in-progress \u2192 done** |\n| `blocked_on` non-null | post a comment carrying the **blocker** text; **do NOT** mark done; leave in a needs-attention state |\n| `conflicts_seen` non-null | post a comment describing the **conflict**; **do NOT** mark done |",
+  "kind": "table",
+  "preview": "| Report condition | Inline update to the worker's issue |",
+  "sources": [
+   "plugins/jj-concurrent-linear/skills/jj-burndown/SKILL.md"
+  ]
+ },
+ "868769217b52f71a": {
+  "content": "gh pr list --head <bookmark> --state open --json number,url --jq '.[0]'",
+  "kind": "fence",
+  "preview": "gh pr list --head <bookmark> --state open --json number,url --jq '.[0]'",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "8a7c6c092a6fa7b9": {
+  "content": "jj bookmark track <bookmark> --remote=origin --no-pager   # only if untracked\njj git push -b <bookmark> --no-pager\n# create vs update, keyed on the head branch:\ngh pr list --head <bookmark> --state open --json url --jq '.[0].url'\n#   zero results \u2192 gh pr create --head <bookmark> --base <parent> --title \u2026 --body-file \u2026 [--draft]\n#   one  result  \u2192 gh pr edit   <bookmark> --base <parent> --title \u2026 --body-file \u2026",
+  "kind": "fence",
+  "preview": "jj bookmark track <bookmark> --remote=origin --no-pager   # only if untracked",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "8aada9aef9cedb41": {
+  "content": "| Report condition | Linear update to the worker's sub-issue |\n|---|---|\n| `blocked_on` null **AND** `conflicts_seen` null (clean finish) | transition in-progress \u2192 done (**idempotent**, \u00a73.2) |\n| `blocked_on` non-null | post a comment with the blocker text; **do NOT** mark done; leave needing-attention (\u00a73.3) |\n| `conflicts_seen` non-null | post a comment describing the conflict; **do NOT** mark done (\u00a73.4) |\n| no report at all (stall, resume-in-place) | **no update**; wait for a successor's report (\u00a74.3) |\n| Linear MCP unavailable / no sub-issue recorded | skip; note in reconcile report; integration proceeds (\u00a74.1 / \u00a74.2) |",
+  "kind": "table",
+  "preview": "| Report condition | Linear update to the worker's sub-issue |",
+  "sources": [
+   "plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md"
+  ]
+ },
+ "8ab24401dace4fa1": {
+  "content": "/jj-pr-fixup <pr> [--workspace <path>] [--base <rev>]",
+  "kind": "fence",
+  "preview": "/jj-pr-fixup <pr> [--workspace <path>] [--base <rev>]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md"
+  ]
+ },
+ "8b3205402388a766": {
+  "content": "## 1. Export API\n- [ ] 1.1 Add `src/api/export.ts` endpoint\n- [ ] 1.2 Wire `src/api/router.ts` to the export endpoint\n## 2. Export docs\n- [ ] 2.1 Document the export endpoint in `docs/export.md`\n- [ ] 2.2 Add a usage example to `docs/examples/export.md`",
+  "kind": "fence",
+  "preview": "## 1. Export API",
+  "sources": [
+   "plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md"
+  ]
+ },
+ "8fab3ae50ab66eec": {
+  "content": "# the ops from the captured op (exclusive) up to the current @\njj op log --no-pager -T 'separate(\" \", id.short(), description) ++ \"\\n\"' --no-graph",
+  "kind": "fence",
+  "preview": "# the ops from the captured op (exclusive) up to the current @",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-rewind/SKILL.md"
+  ]
+ },
+ "8fc5ff020fe13d04": {
+  "content": "# Review summaries (APPROVE / REQUEST_CHANGES / COMMENT bodies):\ngh pr view <pr> --json reviews --jq '.reviews[] | {author: .author.login, state, body}'\n# File/line-anchored review-comment threads:\ngh api repos/{owner}/{repo}/pulls/<pr>/comments \\\n--jq '.[] | {path, line, original_line, body, in_reply_to_id, id}'",
+  "kind": "fence",
+  "preview": "# Review summaries (APPROVE / REQUEST_CHANGES / COMMENT bodies):",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md"
+  ]
+ },
+ "907bd4a349ce5b0c": {
+  "content": "gh pr create \\\n--head <bookmark> \\\n--base <base-or-default> \\\n--title \"<generated title>\" \\\n--body-file <body-file> \\\n[--draft]",
+  "kind": "fence",
+  "preview": "gh pr create \\",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "9689c4818f84d1db": {
+  "content": "not released: refused \u2014 release v0.7.1 already exists (tags are immutable)\naction:       choose a new version and re-run /jj-release",
+  "kind": "fence",
+  "preview": "not released: refused \u2014 release v0.7.1 already exists (tags are immutable)",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "99fa0d06e968346a": {
+  "content": "/jj-release [<version>] [--target <rev>] [--notes-file <path>] \\\n[--prerelease | --no-prerelease] [--draft] \\\n[--artifacts-cmd \"<command>\"] [--trunk <branch>]",
+  "kind": "fence",
+  "preview": "/jj-release [<version>] [--target <rev>] [--notes-file <path>] \\",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "9b671458d791edb9": {
+  "content": "| Role | Where | Owns |\n|------|-------|------|\n| **Orchestrator** | primary/default workspace | workspace add/forget, **all** `jj bookmark` + `jj git push` + ref ops, integration, its own per-session agent-plan manifest (\u00a73), issue tracker |\n| **Worker** | one jj workspace each | edits + shaping its own commits (`jj new`/`jj describe -m`). Never bookmarks, never pushes, never raw mutating git. |",
+  "kind": "table",
+  "preview": "| Role | Where | Owns |",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-delegate/SKILL.md"
+  ]
+ },
+ "9bf2b3909f154c6d": {
+  "content": "jj git push -b <each moved bookmark> --no-pager",
+  "kind": "fence",
+  "preview": "jj git push -b <each moved bookmark> --no-pager",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "a330e1ddc9ca0ce8": {
+  "content": "/jj-preview <rev>",
+  "kind": "fence",
+  "preview": "/jj-preview <rev>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-preview/SKILL.md"
+  ]
+ },
+ "a3419a00bd927d41": {
+  "content": "jj log -r <headRefName> --ignore-working-copy --no-pager -T 'change_id.short()' --no-graph 2>&1\n# If the branch is not present locally, fetch it (orchestrator-owned),\n# then re-resolve. If it still cannot be resolved \u2192 BLOCKER.",
+  "kind": "fence",
+  "preview": "jj log -r <headRefName> --ignore-working-copy --no-pager -T 'change_id.short()' ",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md"
+  ]
+ },
+ "a38c423a2f615708": {
+  "content": "jj log --no-pager --ignore-working-copy -r <rev> --no-graph -T 'commit_id ++ \"\\n\"'",
+  "kind": "fence",
+  "preview": "jj log --no-pager --ignore-working-copy -r <rev> --no-graph -T 'commit_id ++ \"\\n",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-preview/SKILL.md"
+  ]
+ },
+ "a5014f745a9aee6c": {
+  "content": "# commit subjects since the baseline, oldest-first, read-only\njj log -r '<baseline-tag>..<target>' --ignore-working-copy --no-pager \\\n--no-graph --reversed -T 'description.first_line() ++ \"\\n\"'\n# (optionally enrich with merged PR titles/numbers since the baseline)\ngh pr list --state merged --base <trunk> --limit 100 \\\n--json number,title,mergedAt --jq '.[] | \"#\\(.number) \\(.title)\"'",
+  "kind": "fence",
+  "preview": "# commit subjects since the baseline, oldest-first, read-only",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "a5e3bb9ea7b52ea5": {
+  "content": "undo this absorb:  jj op restore <PRE_OP>",
+  "kind": "fence",
+  "preview": "undo this absorb:  jj op restore <PRE_OP>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "aa35f45c2730be7b": {
+  "content": "gh pr edit <bookmark> \\\n--title \"<generated title>\" \\\n--body-file <body-file>",
+  "kind": "fence",
+  "preview": "gh pr edit <bookmark> \\",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "aa86a65209681735": {
+  "content": "/jj-rewind [label]",
+  "kind": "fence",
+  "preview": "/jj-rewind [label]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-rewind/SKILL.md"
+  ]
+ },
+ "acbc3d4b516821f7": {
+  "content": "jj workspace list --no-pager\njj bookmark list --all-remotes --ignore-working-copy --no-pager",
+  "kind": "fence",
+  "preview": "jj workspace list --no-pager",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-rewind/SKILL.md"
+  ]
+ },
+ "ae8ba62f1d82f2ef": {
+  "content": "gh pr view <pr> --json number,headRefName,headRefOid,url,state,title --jq '.'",
+  "kind": "fence",
+  "preview": "gh pr view <pr> --json number,headRefName,headRefOid,url,state,title --jq '.'",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md"
+  ]
+ },
+ "b4b09a301a90419d": {
+  "content": "jj log -r 'trunk()..<top> & bookmarks()' \\\n--ignore-working-copy --no-pager --no-graph --reversed \\\n-T 'bookmarks ++ \"\\n\"'",
+  "kind": "fence",
+  "preview": "jj log -r 'trunk()..<top> & bookmarks()' \\",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "b5b1bd04d13afc09": {
+  "content": "# stack base: the parent of the oldest change in trunk()..<top>\njj log -r 'roots(trunk()..<top>)-' \\\n--ignore-working-copy --no-pager --no-graph -T 'commit_id ++ \"\\n\"'\n# fetched trunk tip\njj log -r '<trunk>' \\\n--ignore-working-copy --no-pager --no-graph -T 'commit_id ++ \"\\n\"'",
+  "kind": "fence",
+  "preview": "# stack base: the parent of the oldest change in trunk()..<top>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "b91be2456518f02f": {
+  "content": "RELEASE SUMMARY \u2014 review before publishing\nversion:     v0.8.0            (proposed: minor bump from v0.7.1 via feat:)\ntarget:      <sha>  (main HEAD)\nCI gate:     green \u2014 3/3 checks passed (lint, test, json)\npre-release: ON   (0.x policy \u2014 say \"not a pre-release\" to override)\ndraft:       no\nassets:      none (source-only)   |   or: dist/foo.tgz, dist/foo.sha256\nnotes:       <rendered notes preview>\nPublish this release? (go / no)",
+  "kind": "fence",
+  "preview": "RELEASE SUMMARY \u2014 review before publishing",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "ba7795ab1e55dd63": {
+  "content": "gh pr checks <pr> --json bucket,state,name             # per-check buckets\ngh pr view  <pr> --json statusCheckRollup,mergeStateStatus,mergeable,state",
+  "kind": "fence",
+  "preview": "gh pr checks <pr> --json bucket,state,name             # per-check buckets",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "bff3f6ac4b3baf1e": {
+  "content": "jj op log --no-pager -T 'id ++ \"\\n\"' --no-graph | grep -F '<stored-op-id>'",
+  "kind": "fence",
+  "preview": "jj op log --no-pager -T 'id ++ \"\\n\"' --no-graph | grep -F '<stored-op-id>'",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-rewind/SKILL.md"
+  ]
+ },
+ "c123837dfe5749f8": {
+  "content": "jj git fetch -b <trunk> --no-pager",
+  "kind": "fence",
+  "preview": "jj git fetch -b <trunk> --no-pager",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "c31abcf4f2728fcd": {
+  "content": "# run an openspec/opsx command, drop only known-harmless stderr, keep exit code\nopsx_filtered() {\ncommand -v openspec >/dev/null 2>&1 || {\necho \"BLOCKER: openspec CLI not found on PATH\" >&2; return 127; }\nlocal err; err=\"$( { \"$@\" 2>&1 1>&3 3>&-; } 3>&1 )\"; local code=$?\nprintf '%s\\n' \"$err\" \\\n| grep -v -e \"Rules for 'tasks' must be an array\" \\\n-e \"Unknown artifact ID in rules\" >&2\nreturn $code\n}\n# usage: opsx_filtered openspec validate <change> --no-pager",
+  "kind": "fence",
+  "preview": "# run an openspec/opsx command, drop only known-harmless stderr, keep exit code",
+  "sources": [
+   "plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md"
+  ]
+ },
+ "c4172e4575e58175": {
+  "content": "landed (bottom \u2192 top):\n1. feat/data-layer  #40  merged   base=main\n2. feat/api         #41  merged   base set: feat/data-layer \u2192 main\n3. feat/ui          #42  checks-red  (run stopped here)\nstopped: #42 feat/ui \u2014 required check failed\ncleanup: jj git fetch \u2713 | bookmarks deleted: feat/data-layer, feat/api |\nremote branches deleted: feat/data-layer, feat/api |\nworkspaces forgotten: wt-data-layer, wt-api",
+  "kind": "fence",
+  "preview": "landed (bottom \u2192 top):",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "cde7e31b20a13db0": {
+  "content": "jj git fetch --no-pager",
+  "kind": "fence",
+  "preview": "jj git fetch --no-pager",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "ce50271d3a8c723a": {
+  "content": "# conflicted changes in the rebased stack\njj log -r 'trunk()..<top> & conflicts()' \\\n--ignore-working-copy --no-pager --no-graph \\\n-T 'change_id ++ \" \" ++ description.first_line() ++ \"\\n\"'\n# per-conflicted-change file paths\njj resolve --list -r <conflicted-change> --no-pager   # LIST only \u2014 never the interactive resolve",
+  "kind": "fence",
+  "preview": "# conflicted changes in the rebased stack",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md"
+  ]
+ },
+ "cece56bd8a2a1306": {
+  "content": "jj diff --ignore-working-copy --no-pager        # everything still in @ after absorb",
+  "kind": "fence",
+  "preview": "jj diff --ignore-working-copy --no-pager        # everything still in @ after ab",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "cf3af1f11d8506b0": {
+  "content": "checkpoint: pre-fanout-integration\nop id:      <absolute op id>\nrecorded:   <timestamp>\nnote:       before rebasing auth+billing onto trunk",
+  "kind": "fence",
+  "preview": "checkpoint: pre-fanout-integration",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md"
+  ]
+ },
+ "d052af2f2bd0a85c": {
+  "content": "gh pr edit <bookmark> --base <new-parent>",
+  "kind": "fence",
+  "preview": "gh pr edit <bookmark> --base <new-parent>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "d083250bcbe8e474": {
+  "content": "| Name | Anchored phrase (substring/regex, case-sensitive on the literal) |\n|------|------------------------------------------------------------------|\n| `tasks-rules-not-array` | `Rules for 'tasks' must be an array` |\n| `unknown-artifact-id-in-rules` | `Unknown artifact ID in rules` |",
+  "kind": "table",
+  "preview": "| Name | Anchored phrase (substring/regex, case-sensitive on the literal) |",
+  "sources": [
+   "plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md"
+  ]
+ },
+ "d1842f7f37773d46": {
+  "content": "jj workspace add -r <pr-head-rev> <workspace-path>     # -r required; explicit base",
+  "kind": "fence",
+  "preview": "jj workspace add -r <pr-head-rev> <workspace-path>     # -r required; explicit b",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md"
+  ]
+ },
+ "d1a4a1f2917e3e95": {
+  "content": "# Sparse case \u2014 create empty, then narrow to exactly the lane's paths:\njj workspace add -r <base-rev> --sparse-patterns empty <ws-dir>\n( cd <ws-dir> && jj sparse set --clear --add <glob> [--add <glob> ...] )\n# --clear drops the default everything-pattern; each --add includes one path/dir.\n# After this only the partition's paths exist on disk; everything else is absent.\n# NEVER `jj sparse edit` \u2014 it is interactive and the worker contract forbids it.",
+  "kind": "fence",
+  "preview": "# Sparse case \u2014 create empty, then narrow to exactly the lane's paths:",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-delegate/SKILL.md"
+  ]
+ },
+ "d28c86c9f52d6441": {
+  "content": "| Workspace        | Session  | Change   | Description                  | Conflict | Stale | Status    | Blocker / Workload          |\n| ---------------- | -------- | -------- | ---------------------------- | -------- | ----- | --------- | --------------------------- |\n| wt-apply-auth    | sess-a1  | qpvuntsm | feat: add login action       | \u2014        | \u2014     | in-flight | /opsx:apply add-auth        |\n| wt-apply-billing | sess-a1  | zzrlkokm | fix: prorate cancellations   | conflict | \u2014     | blocked   | merge conflict in plan.sql  |\n| wt-spike-rt      | sess-b2  | mlinkrwq | wip: poke at realtime        | \u2014        | stale | in-flight | spike realtime              |\n| wt-adhoc-old     | unknown  | rwzpkqtn | wip: leftover                | \u2014        | \u2014     | unknown   | unknown (no live manifest)  |",
+  "kind": "table",
+  "preview": "| Workspace        | Session  | Change   | Description                  | Confli",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-fleet/SKILL.md"
+  ]
+ },
+ "d783851a9f895774": {
+  "content": "jj absorb --no-pager [--from <rev>] [--into <rev>] [<fileset>...]",
+  "kind": "fence",
+  "preview": "jj absorb --no-pager [--from <rev>] [--into <rev>] [<fileset>...]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "d7e78a7ecf11eadb": {
+  "content": "| Verb(s) | Shape | What the worker produces | Reconcile tail |\n|---------|-------|--------------------------|----------------|\n| `apply` | **Implementing** | code changes + ticked tasks.md | integrate \u2192 `/opsx:verify` **(GATE)** \u2192 on green: `/opsx:archive` then issue-tracker update \u2192 `/jj-pr` push/PR; on non-green: **stop** before trunk-advance/PR and report |\n| `propose` / `new` / `ff` | **Authoring** | the change artifacts under `openspec/changes/<name>/` (proposal/design/specs/tasks) | surface artifacts for review; bookmark only; **no verify, no archive, no merge-to-main** (nothing is implemented yet) |\n| `relay` | **Composite** (authoring-leg \u2192 human gate \u2192 implementing-leg) | first the authoring artifacts, then \u2014 only on a human *go* \u2014 the implementing code + ticked tasks.md | the **authoring** tail (validate + surface) at the gate, then on go the **implementing** tail (integrate \u2192 verify gate \u2192 archive \u2192 push/PR); see \u00a76 |\n| `explore` | **Interactive** | (a thinking partner \u2014 file output only when asked) | NOT a default background candidate. Only background as \"autonomous exploration \u2192 a written findings doc\" when the user explicitly asks. Otherwise run it inline, not via a worker. |",
+  "kind": "table",
+  "preview": "| Verb(s) | Shape | What the worker produces | Reconcile tail |",
+  "sources": [
+   "plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md"
+  ]
+ },
+ "d89db796c701a1a1": {
+  "content": "/jj-land [<top-bookmark>] [--trunk <branch>] [--method squash|merge|rebase] \\\n[--poll-interval <seconds>] [--timeout <seconds>]",
+  "kind": "fence",
+  "preview": "/jj-land [<top-bookmark>] [--trunk <branch>] [--method squash|merge|rebase] \\",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "dc1e5ceb9ecd7642": {
+  "content": "# Discover all manifests at the repo root (sorted, deduped). Both forms.\nls -1 .jj-agent-plan.json .jj-agent-plan.*.json 2>/dev/null",
+  "kind": "fence",
+  "preview": "# Discover all manifests at the repo root (sorted, deduped). Both forms.",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-fleet/SKILL.md"
+  ]
+ },
+ "dd41bbf8783d41a6": {
+  "content": "gh pr edit <pr_{n+1}> --base <trunk>",
+  "kind": "fence",
+  "preview": "gh pr edit <pr_{n+1}> --base <trunk>",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-land/SKILL.md"
+  ]
+ },
+ "deccbc6d5de5af8f": {
+  "content": "{\n\"session\": \"<session-id-token-or-null>\",  // owning session (liveness marker)\n\"heartbeat\": \"<ISO-8601 timestamp>\",       // refreshed on every write\n\"slices\": [ /* bookmark, workspace, base-rev, status, workload, blocker */ ]\n}",
+  "kind": "fence",
+  "preview": "{",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-delegate/SKILL.md"
+  ]
+ },
+ "e52981bd9b6fa36d": {
+  "content": "jj git push -b <bookmark> --no-pager",
+  "kind": "fence",
+  "preview": "jj git push -b <bookmark> --no-pager",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-pr/SKILL.md"
+  ]
+ },
+ "e541fce5a864b135": {
+  "content": "# Find a prior stack comment (one carrying the jj-stack:start marker):\ngh pr view <bookmark> --json comments \\\n--jq '.comments[] | select(.body | contains(\"<!-- jj-stack:start -->\")) | .url'\n#   (or `gh api` on the comments endpoint to get the comment id for an edit)",
+  "kind": "fence",
+  "preview": "# Find a prior stack comment (one carrying the jj-stack:start marker):",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "e875289402b493a7": {
+  "content": "gh release list --limit 100 --json tagName,isDraft,isPrerelease,createdAt 2>&1\ngit tag --list 'v*' 2>&1                 # read-only git is allowed",
+  "kind": "fence",
+  "preview": "gh release list --limit 100 --json tagName,isDraft,isPrerelease,createdAt 2>&1",
+  "sources": [
+   "plugins/jj-lifecycle/skills/jj-release/SKILL.md"
+  ]
+ },
+ "e9fbf59732a8d209": {
+  "content": "jj op show -p --no-pager @          # the diff of the absorb operation just run",
+  "kind": "fence",
+  "preview": "jj op show -p --no-pager @          # the diff of the absorb operation just run",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "ead3a995abdf8727": {
+  "content": "/jj-pr <bookmark> --base <parent> [--draft]   # parent = trunk for the root",
+  "kind": "fence",
+  "preview": "/jj-pr <bookmark> --base <parent> [--draft]   # parent = trunk for the root",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md"
+  ]
+ },
+ "ec04317003168442": {
+  "content": "## Fleet status \u2014 3 workspaces \u00b7 2 sessions\n| Workspace        | Session  | Change   | Description                  | Conflict | Stale | Status    | Blocker / Workload          |\n| ---------------- | -------- | -------- | ---------------------------- | -------- | ----- | --------- | --------------------------- |\n| wt-apply-auth    | sess-a1  | qpvuntsm | feat: add login action       | \u2014        | \u2014     | in-flight | /opsx:apply add-auth        |\n| wt-apply-billing | sess-a1  | zzrlkokm | fix: prorate cancellations   | conflict | \u2014     | blocked   | merge conflict in plan.sql  |\n| wt-spike-rt      | sess-b2  | mlinkrwq | wip: poke at realtime        | \u2014        | stale | in-flight | spike realtime              |\n| wt-adhoc-old     | unknown  | rwzpkqtn | wip: leftover                | \u2014        | \u2014     | unknown   | unknown (no live manifest)  |",
+  "kind": "fence",
+  "preview": "## Fleet status \u2014 3 workspaces \u00b7 2 sessions",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-fleet/SKILL.md"
+  ]
+ },
+ "f02ace6e3420c6a1": {
+  "content": "/jj-absorb [<fileset>...] [--into <rev>] [--from <rev>]",
+  "kind": "fence",
+  "preview": "/jj-absorb [<fileset>...] [--into <rev>] [--from <rev>]",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "f47c9416e7702976": {
+  "content": "jj diff --ignore-working-copy --no-pager        # what remains in @\njj log --ignore-working-copy --no-pager -r 'mutable()'   # destinations + descriptions",
+  "kind": "fence",
+  "preview": "jj diff --ignore-working-copy --no-pager        # what remains in @",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "f6000d65d7fa6030": {
+  "content": "| Column | Source |\n| --- | --- |\n| Workspace | workspace path/name (manifest or `jj workspace list`) |\n| Session | owning orchestrator session (manifest liveness marker / filename) |\n| Change | held change-id (live jj) |\n| Description | held change description (live jj) |\n| Conflict | conflict flag (live jj) |\n| Stale | stale flag (live jj `workspace list`) |\n| Status | in-flight / done / blocked (manifest slice, joined by workspace path) |\n| Blocker / Workload | blocker note or workload (manifest slice) |",
+  "kind": "table",
+  "preview": "| Column | Source |",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-fleet/SKILL.md"
+  ]
+ },
+ "fa0ffe9fefb92749": {
+  "content": "PRE_OP=$(jj op log --no-pager --no-graph -n1 -T 'id.short()')",
+  "kind": "fence",
+  "preview": "PRE_OP=$(jj op log --no-pager --no-graph -n1 -T 'id.short()')",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-absorb/SKILL.md"
+  ]
+ },
+ "fd79f1e1bcf842a8": {
+  "content": "# <ws-dir>   = ../wt-<session-prefix>-<slug>   (prefixed under a session id)\n#            = ../wt-<slug>                     (back-compat, no session id)\n# <bookmark> = <session-prefix>-<slug>          (prefixed under a session id)\n#            = <slug>/feat/<short-slug>          (back-compat, no session id)\njj workspace add -r <base-rev> <ws-dir>         # -r is required; default would\n# base on @'s PARENT and miss inputs\njj bookmark create <bookmark> -r @-             # create the worker's bookmark\n# (orchestrator owns all bookmarks)",
+  "kind": "fence",
+  "preview": "# <ws-dir>   = ../wt-<session-prefix>-<slug>   (prefixed under a session id)",
+  "sources": [
+   "plugins/jj-concurrent/skills/jj-delegate/SKILL.md"
+  ]
+ }
+}
