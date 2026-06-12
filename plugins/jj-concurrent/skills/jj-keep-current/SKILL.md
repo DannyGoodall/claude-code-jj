@@ -33,9 +33,9 @@ land flow consults. It defines a clear verdict contract **without depending on
 `/jj-land` (D4) existing**: if D4 lands, its skill calls this one and lands only
 on `landable`; but this capability stands alone and is independently testable.
 
-Substrate knowledge (jj command surface, revsets, templates, non-interactive
-rules) comes from the installed `jj-vcs` skill — defer to it for jj command
-detail; this skill owns only the keep-current choreography. It reuses the
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail; this skill owns only the keep-current choreography. It reuses the
 [`jj-delegate`](../jj-delegate/SKILL.md) **"Integration never halts"** invariant
 for its rebase — it references that invariant, it does not change it.
 

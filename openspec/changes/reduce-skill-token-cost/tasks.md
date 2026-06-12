@@ -13,9 +13,9 @@
 
 ## 3. Stage 2 — Shared contract (commit 3)
 
-- [ ] 3.1 Add the canonical "Roles & shared conventions" section to `plugins/jj-concurrent/skills/jj-delegate/SKILL.md` consolidating: substrate-knowledge-from-jj-vcs, orchestrator-only/never-in-a-worker, non-interactive jj (`--no-pager`, no `-i`, no editor), never raw mutating git, never delete `.jj`
-- [ ] 3.2 In the other 15 skills, replace the repeated boilerplate paragraphs with one reference line restating only orchestrator-only + non-interactive inline; cross-plugin skills (jj-release, jj-openspec, the three linear skills) reference by prose name, no relative path; do NOT remove any skill-unique constraint; do NOT touch `agents/jj-workspace-worker.md` or any hook
-- [ ] 3.3 Run lint (boilerplate-marker rule now bites) + manifest check; capture counts; commit
+- [x] 3.1 Add the canonical "Roles & shared conventions" section to `plugins/jj-concurrent/skills/jj-delegate/SKILL.md` consolidating: substrate-knowledge-from-jj-vcs, orchestrator-only/never-in-a-worker, non-interactive jj (`--no-pager`, no `-i`, no editor), never raw mutating git, never delete `.jj`
+- [x] 3.2 In the other 15 skills, replace the repeated boilerplate paragraphs with one reference line restating only orchestrator-only + non-interactive inline; cross-plugin skills (jj-release, jj-openspec, the three linear skills) reference by prose name, no relative path; do NOT remove any skill-unique constraint; do NOT touch `agents/jj-workspace-worker.md` or any hook
+- [x] 3.3 Run lint (boilerplate-marker rule now bites) + manifest check; capture counts; commit
 
 ## 4. Stage 3 — Within-file dedupe (commit 4)
 

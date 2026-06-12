@@ -33,9 +33,9 @@ edits `plugin.json` / `package.json` / `Cargo.toml` or any other manifest. It
 ships **no** build logic; producing release artifacts is the repo owner's job,
 attached through an optional opaque hook (§7).
 
-Substrate knowledge (jj command surface, revsets, templates, non-interactive
-rules, output formats) comes from the installed `jj-vcs` skill — defer to it for
-jj command detail; this skill owns only the release choreography. `jj` is used
+Shared contract: jj-delegate §Roles & shared conventions (jj-concurrent
+plugin) — orchestrator-only, non-interactive jj; defer to the installed
+`jj-vcs` skill for jj command detail; this skill owns only the release choreography. `jj` is used
 read-only here (target/commit/tag inspection); the mutating step is `gh`.
 
 ## Preconditions (verify, don't assume)

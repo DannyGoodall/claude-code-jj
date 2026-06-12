@@ -30,8 +30,9 @@ reinvents — [`/jj-delegate`](../jj-delegate/SKILL.md)'s workspace provisioning
 per-workspace environment provisioning (gitignored-file copy + worktree-include
 composition), and port-per-worker assignment.
 
-Substrate knowledge (jj command surface, non-interactive rules, output formats)
-comes from the installed `jj-vcs` skill — defer to it for jj command detail;
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail;
 this skill owns only the preview choreography.
 
 ## Contract — strictly a preview, read-only to history
@@ -53,8 +54,7 @@ this skill owns only the preview choreography.
   present. No remote, no `gh`, no push, no bookmark operation is involved.
 - **Read-only to history.** Provisioning uses `jj workspace add -r <rev>`, which
   materialises `<rev>` in its own directory and never rebases `@` or moves a
-  bookmark. Use non-interactive jj only (`--no-pager`, no editor, no
-  `-i`/`--interactive`).
+  bookmark.
 
 ## Arguments
 
@@ -202,8 +202,8 @@ torn-down preview is safe.
 - **No repo-metadata deletion.** Teardown stops the process, `jj workspace
   forget`s the preview, and removes the throwaway dir — never `rm` under
   `.jj`/`.git`, never raw mutating git.
-- **Non-interactive jj only.** `--no-pager`; reads use `--ignore-working-copy`;
-  no editor; no `-i`/`--interactive`.
+- **Reads use `--ignore-working-copy`** so a preview never triggers a snapshot
+  of the primary working copy.
 - **No remote.** No `gh`, no push, no bookmark — a preview never reaches GitHub.
 - **Reuse, don't reinvent.** Environment provisioning (gitignored-file copy +
   worktree-include) and port assignment are `/jj-delegate`'s existing

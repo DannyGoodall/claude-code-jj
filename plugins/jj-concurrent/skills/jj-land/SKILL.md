@@ -32,9 +32,9 @@ PR onto its parent feature branch (which is then deleted by `--delete-branch`)
 instead of onto trunk, orphaning that child's content. Landing bottom-up with
 base-retargeting at each step is the single safe command that avoids it.
 
-Substrate knowledge (jj command surface, revsets, templates, non-interactive
-rules) comes from the installed `jj-vcs` skill — defer to it for jj command
-detail; this skill owns only the land choreography.
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail; this skill owns only the land choreography.
 
 ## Preconditions (verify, don't assume)
 

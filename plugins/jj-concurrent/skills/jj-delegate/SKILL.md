@@ -21,16 +21,28 @@ You own workspace lifecycle, all bookmark/ref operations, `jj git push`, and
 integration. Workers own exactly their own workspace's commits. This skill is
 the single- and multi-worker driver for that model.
 
-Substrate knowledge (jj command surface, non-interactive rules, output
-formats) comes from the installed `jj-vcs` skill — defer to it for command
-detail; this skill owns only the orchestration.
-
-## Roles (enforced by the worker contract + guard hook)
+## Roles & shared conventions (enforced by the worker contract + guard hook)
 
 | Role | Where | Owns |
 |------|-------|------|
 | **Orchestrator** | primary/default workspace | workspace add/forget, **all** `jj bookmark` + `jj git push` + ref ops, integration, its own per-session agent-plan manifest (§3), issue tracker |
 | **Worker** | one jj workspace each | edits + shaping its own commits (`jj new`/`jj describe -m`). Never bookmarks, never pushes, never raw mutating git. |
+
+This section is the canonical home of the contract every skill in this plugin
+family follows (other skills cite it as "jj-delegate §Roles & shared
+conventions"):
+
+- **Substrate knowledge** (jj command surface, non-interactive rules, output
+  formats) comes from the installed `jj-vcs` skill — defer to it for command
+  detail; each skill owns only its own choreography.
+- **Orchestrator-only**: these skills run in the primary/default workspace and
+  are never invoked inside a worker.
+- **Non-interactive jj only**: `--no-pager`, no `-i`/`--interactive`, no
+  spawned editor.
+- **Never raw mutating git** — read-only `git log`/`git show`/`git diff` are
+  fine; the guard hook blocks the rest.
+- **Never delete `.jj`** or any repository metadata; undo goes through the op
+  log (`jj op restore`), which is itself a recorded, reversible operation.
 
 ## 1. Resolve parameters (infer first, ask only on ambiguity)
 

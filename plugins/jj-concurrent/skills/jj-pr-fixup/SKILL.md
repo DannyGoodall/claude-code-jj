@@ -35,9 +35,9 @@ hunk-landing step is delegated to [`/jj-absorb`](../jj-absorb/SKILL.md)
 [`/jj-pr`](../jj-pr/SKILL.md) (capability `jj-github-pr`). Worker provisioning
 and dispatch follow [`/jj-delegate`](../jj-delegate/SKILL.md).
 
-Substrate knowledge (jj command surface, revsets, non-interactive rules, output
-formats) comes from the installed `jj-vcs` skill — defer to it for jj command
-detail; this skill owns only the read-comments → dispatch → absorb → push loop.
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail; this skill owns only the read-comments → dispatch → absorb → push loop.
 
 ## Preconditions (verify, don't assume)
 

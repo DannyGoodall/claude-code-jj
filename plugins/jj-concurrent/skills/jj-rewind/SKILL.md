@@ -27,8 +27,9 @@ when a checkpoint was recorded, via `jj op restore <op-id>`.
 is **summary-first and confirmation-gated**: it shows what the restore will
 change before touching anything.
 
-Substrate knowledge (jj command surface, non-interactive rules, output formats)
-comes from the installed `jj-vcs` skill — defer to it for jj command detail;
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail;
 this skill owns only the rewind choreography.
 
 ## Preconditions (verify, don't assume)
@@ -39,10 +40,8 @@ this skill owns only the rewind choreography.
 - **At least one checkpoint exists.** Records live in the agent-plan manifest's
   `checkpoints` section (written by `/jj-checkpoint`). With no checkpoints, there
   is nothing to rewind to — report that and stop.
-- **Op-log only, never deletes repo metadata.** Rollback is achieved by
-  `jj op restore` **alone**. Never delete `.jj` (or any repository metadata),
-  never run raw mutating git, never touch bookmarks or push directly. Non-
-  interactive jj only (`--no-pager`, no editor, no `-i`/`--interactive`).
+- **Op-log only.** Rollback is achieved by `jj op restore` **alone**; never
+  touch bookmarks or push directly (the shared contract covers the rest).
 
 ## Arguments
 
@@ -187,7 +186,6 @@ jj-delegate/jj-fleet guidance:
   summary and §4 explicit confirmation.
 - **`jj op restore` is the only rollback path.** Never delete `.jj` or any repo
   metadata; never run raw mutating git; never touch bookmarks or push.
-- **Non-interactive jj only.** `--no-pager`; no editor; no `-i`/`--interactive`.
 - **Single-purpose.** Report stale siblings; do not auto-`update-stale` them.
 
 ## Where this is called

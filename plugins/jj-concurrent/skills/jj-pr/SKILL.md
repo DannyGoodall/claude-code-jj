@@ -21,8 +21,9 @@ bookmark to the remote but never opens a pull request. This skill is the missing
 push-and-PR step — it pushes a bookmark, handles one-time remote tracking, then
 creates or updates that bookmark's GitHub PR via `gh`, with a generated body.
 
-Substrate knowledge (jj command surface, non-interactive rules, output formats)
-comes from the installed `jj-vcs` skill — defer to it for jj command detail;
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail;
 this skill owns only the push-and-PR choreography.
 
 ## Preconditions (verify, don't assume)
