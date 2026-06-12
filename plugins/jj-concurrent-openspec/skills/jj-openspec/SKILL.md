@@ -1,23 +1,16 @@
 ---
 name: jj-openspec
 description: |
-  Background an OpenSpec workflow verb in its own jj workspace via the
-  jj-concurrent orchestrator. Maps the verb to a shape (implementing vs
-  authoring) and the right reconcile tail. For `apply`, can fan a single
-  change out across several concurrent jj workers — one workspace per
-  separable tasks.md group — and reconcile them into one change branch. For
-  `apply` over a SET of changes, can run a multi-change pipeline — one
-  apply-shape worker per change as concurrent siblings, integrated as
-  independent landings or a declared-dependency stitched stack.
-  Also offers `relay`: draft a proposal, halt at a human go/no-go gate, then
-  on go apply it — one command from idea to merged code.
-  Triggers: /jj-openspec <verb> [change], "apply <change> on a jj workspace",
-  "fan out apply across task groups", "apply a set of changes concurrently",
-  "run the multi-change pipeline", "draft a proposal in the background",
-  "propose/new/ff <change> with a jj worker", "/jj-openspec relay <idea>",
-  "draft then apply in one go". Requires: a jj repo (ideally
-  colocated), the jj-concurrent plugin (jj-delegate + jj-workspace-worker),
-  an openspec/ directory, and the opsx skills available in-session.
+  Background an OpenSpec workflow verb in its own jj workspace via the jj-
+  concurrent orchestrator. Maps each verb to a shape (implementing vs
+  authoring) with the right reconcile tail; for apply, can fan one change out
+  across concurrent workers (one workspace per separable tasks.md group) or
+  run a multi-change pipeline over a set; relay drafts a proposal, halts at a
+  human go/no-go gate, then applies on go. Triggers: /jj-openspec <verb>
+  [change], "apply <change> on a jj workspace", "run the multi-change
+  pipeline", "/jj-openspec relay <idea>". Requires a jj repo (ideally
+  colocated), the jj-concurrent plugin, an openspec/ directory, and the opsx
+  skills available in-session.
 metadata:
   version: "0.2.0"
   author: outfitter-style

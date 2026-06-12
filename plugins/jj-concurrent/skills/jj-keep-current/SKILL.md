@@ -1,28 +1,16 @@
 ---
 name: jj-keep-current
 description: |
-  Bring a jj stack up to date with trunk and answer "is it safe to land?" in one
-  orchestrator step — the currency precondition a land flow consults. Given a
-  stack (its tip bookmark, or the current stack) and a resolved trunk bookmark,
-  it (1) `jj git fetch`es trunk and compares the stack's base to the freshly
-  fetched trunk tip; if trunk has not moved it skips straight to the gate (no-op
-  fast path), otherwise it `jj rebase`s the stack onto the new trunk with jj's
-  never-halt semantics (the rebase always exits 0; any conflict is recorded as a
-  first-class conflicted change, never auto-resolved, never via interactive
-  `jj resolve`) and — only on a conflict-free rebase — pushes the moved
-  bookmark(s) so the PR rebuilds against the new base; then (2) runs a CI gate
-  off the PR's required checks (`gh pr checks <ref> --required`, falling back to
-  all checks), with a bounded poll for pending checks after a push. It emits a
-  single typed verdict — landable (current + green) or not-landable/hold with a
-  reason from `trunk-moved`, `rebase-conflicted`, `ci-failing`, `ci-pending`,
-  `ci-missing` — that a human or `/jj-land` consumes. Triggers: /jj-keep-current,
-  "keep this stack current", "is this stack current and green?", "rebase onto
-  trunk and re-check CI before landing". The currency precondition upstack of
-  /jj-land in the reconcile tail. Orchestrator-only (owns fetch, rebase, push,
-  and PR/CI reads); never invoked inside a worker. Non-interactive (`jj …
-  --no-pager`, no interactive `jj resolve`, bounded waits, `gh` with explicit
-  flags). Requires a colocated jj↔git repo with an `origin` remote, a resolved
-  trunk bookmark, and `gh` authenticated.
+  Bring a jj stack up to date with trunk and answer "is it safe to land?" in
+  one orchestrator step. Fetches trunk; if it moved, rebases the stack onto it
+  (never-halt: conflicts become first-class conflicted changes, never auto-
+  resolved) and pushes moved bookmarks only when conflict-free; then gates on
+  the PR's required CI checks (bounded poll). Emits one typed verdict consumed
+  by a human or /jj-land: landable, or hold (trunk-moved, rebase-conflicted,
+  ci-failing, ci-pending, ci-missing). Triggers: /jj-keep-current, "keep this
+  stack current", "is this stack current and green?", "rebase onto trunk and
+  re-check CI". Requires a colocated jj-git repo with `gh` authenticated;
+  orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

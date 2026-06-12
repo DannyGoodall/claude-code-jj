@@ -1,29 +1,16 @@
 ---
 name: jj-release
 description: |
-  Cut a GitHub release for the repository at a single commit in one orchestrator
-  step — the "ship a milestone" step the jj→GitHub lifecycle lacks (the reconcile
-  tail ends at /jj-land; nothing then publishes a release). Relay-shaped: a
-  PREPARE phase resolves the target commit, runs a CI gate off that commit's
-  check-runs/combined status (not `gh pr checks` — the PR is merged by release
-  time), proposes a SemVer bump from conventional commits since the last tag
-  (`feat`→minor, `fix`→patch, breaking/`!`→major) that the human ALWAYS confirms
-  or overrides (asking outright on a first release or non-conventional history),
-  generates release notes from commits/PRs editable in-conversation, defaults
-  0.x to `--prerelease` ON, and runs an optional opaque project-supplied
-  artifacts command; then a single human GO/NO-GO gate; then a PUBLISH phase that
-  on "go" creates the release server-side via `gh release create <tag>
-  --target <sha>` (tag-only `vMAJOR.MINOR.PATCH` versioning — no manifest is
-  edited; the tag is created on the remote, sidestepping jj 0.42's missing tag
-  creation and the guard hook's block on raw `git tag`). Refuses (does not
-  overwrite) when a release for the tag already exists. Triggers: /jj-release,
-  "cut a release", "ship a GitHub release", "release this commit", "tag and
-  publish a release". Orchestrator-only (never invoked inside a worker);
-  non-interactive (`--no-pager`, no `-i`, no editor — human input arrives only
-  through the relay gate); makes no commit, edits no file, force-pushes nothing.
-  Requires a colocated jj↔git repo with an `origin` remote and `gh` authenticated
-  with release-create scope. Ships in the jj-lifecycle plugin and is usable
-  without any concurrency or OpenSpec plugin.
+  Cut a GitHub release at a single commit in one relay-shaped orchestrator
+  step. PREPARE resolves the target commit, gates on that commit's CI,
+  proposes a SemVer bump from conventional commits (the human always confirms
+  or overrides), drafts editable release notes, and can run a project
+  artifacts command; then a human GO/NO-GO gate; PUBLISH creates the release
+  server-side via `gh release create <tag> --target <sha>` (tag-only
+  versioning — no manifest edited, no local git tag). Refuses when the tag's
+  release already exists. Triggers: /jj-release, "cut a release", "ship a
+  GitHub release", "tag and publish a release". Requires a colocated jj-git
+  repo with `gh` authenticated; orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

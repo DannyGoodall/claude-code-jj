@@ -1,18 +1,14 @@
 ---
 name: jj-fleet
 description: |
-  Render a single at-a-glance fleet status view of all in-flight
-  jj-workspace-workers across every concurrent orchestrator session. Snapshots
-  every live jj workspace first (so siblings are never stale), then reads jj
-  state read-only and unions every agent-plan manifest in the repo (all
-  per-session `.jj-agent-plan.<session-id>.json` files plus the default
-  `.jj-agent-plan.json`), joining each slice's status/blocker/workload/owning
-  session onto the matching workspace by path. Stale manifests (past TTL or
-  session-ended) are excluded read-only. Triggers: /jj-fleet, "show the fleet",
-  "fleet status", "what are the workers doing". Orchestrator-only and strictly
-  read-only: runs in the primary (default) workspace, uses only read-only jj plus
-  `jj util snapshot`, never touches bookmarks, push, raw mutating git, any
-  manifest, or any worker's commits. Requires a jj repo with linked workspaces.
+  Render a single at-a-glance status view of all in-flight jj-workspace-
+  workers across every concurrent orchestrator session. Snapshots every live
+  workspace first, then reads jj state read-only and unions every agent-plan
+  manifest in the repo, joining each slice's status/blocker/workload/owning
+  session onto its workspace; stale manifests are excluded. Strictly read-only
+  — never touches bookmarks, push, manifests, or workers' commits. Triggers:
+  /jj-fleet, "show the fleet", "fleet status", "what are the workers doing".
+  Requires a jj repo with linked workspaces; orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

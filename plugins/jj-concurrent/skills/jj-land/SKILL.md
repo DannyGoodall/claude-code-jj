@@ -1,29 +1,16 @@
 ---
 name: jj-land
 description: |
-  Land a stack of GitHub PRs bottom-up in one orchestrator step — the jj analog
-  of Graphite's `gt merge`. Given a jj stack whose changes already have open
-  GitHub PRs, it derives the merge order from the jj stack itself (trunk upward),
-  then for each PR in turn waits until it is actually mergeable (required CI AND
-  GitHub's mergeStateStatus/mergeable verdict — never merging against UNKNOWN),
-  merges it (`gh pr merge`, default `--merge` for a multi-PR stack / `--squash`
-  for a single PR, never `--admin`/force; success judged by PR state, not exit
-  code), retargets the next-up PR's base to trunk via `gh pr edit --base`, and —
-  if a rewriting method (`--squash`/`--rebase`) was chosen for a stack — restacks
-  the un-merged tail (`jj git fetch` + `jj rebase` onto trunk + `jj git push`) so
-  shared-file uppers don't cascade-conflict, then continues up the stack. A red
-  required check or a per-PR wait-timeout aborts the rest of the stack cleanly,
-  leaving merged PRs merged and the un-reached tail open. After the loop it runs a single cleanup pass: `jj git fetch` to sync local
-  trunk, delete the merged bookmarks AND their remote branches, and forget any
-  stale linked workspaces via jj-delegate Teardown. Re-running resumes from the
-  first still-open PR. Triggers: /jj-land,
-  "land the stack", "merge this jj stack bottom-up", "land/merge the stacked PRs
-  for <top>". The land step of the /jj-delegate reconcile tail, downstack of
-  /jj-pr and /jj-stacked-pr. Orchestrator-only (owns bookmarks, refs, push,
-  fetch); never invoked inside a worker. Non-interactive (`jj … --no-pager`, `gh`
-  with explicit flags, no editor) and performs no force operations. Requires a
-  colocated jj↔git repo with an `origin` remote and a trunk branch, `gh`
-  authenticated, and each stacked change already having an open GitHub PR.
+  Land a stack of GitHub PRs bottom-up in one orchestrator step — the jj
+  analog of Graphite's `gt merge`. Derives merge order from the jj stack,
+  waits per PR for required CI and GitHub's mergeability verdict, merges via
+  `gh`, retargets the next PR's base, restacks the un-merged tail, then a
+  cleanup pass (fetch trunk, delete merged bookmarks and remote branches,
+  forget stale workspaces). A red check or wait-timeout aborts the remaining
+  stack cleanly; re-running resumes from the first still-open PR. Triggers:
+  /jj-land, "land the stack", "merge this jj stack bottom-up", "land the
+  stacked PRs for <top>". Requires a colocated jj-git repo with open PRs and
+  `gh` authenticated; orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

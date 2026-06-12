@@ -1,17 +1,14 @@
 ---
 name: jj-pr
 description: |
-  Push a jj bookmark to its GitHub remote and create-or-update its pull request
-  in one orchestrator step — the "submit" that jj lacks (jj git push moves a
-  bookmark but never opens a PR). Given a bookmark, it pushes with
-  `jj git push -b <bookmark>`, handles the one-time `jj bookmark track` need on a
-  freshly colocated repo, then creates (none exists) or updates (one exists) the
-  GitHub PR via `gh`, generating a what/why/benefit body from the change's
-  commits and any OpenSpec proposal.md. Triggers: /jj-pr, "push and open the PR",
-  "submit this bookmark", "open/update the PR for <bookmark>". The reconcile-tail
-  push step for /jj-delegate and /jj-openspec apply. Orchestrator-only (owns refs
-  and push); never invoked inside a worker. Requires a colocated jj↔git repo with
-  an `origin` remote and `gh` authenticated.
+  Push a jj bookmark to its GitHub remote and create-or-update its pull
+  request in one orchestrator step — the "submit" that jj lacks. Pushes with
+  `jj git push -b <bookmark>`, handles the one-time bookmark-track need on a
+  freshly colocated repo, then creates or updates the PR via `gh` with a
+  what/why/benefit body generated from the change's commits and any OpenSpec
+  proposal. Triggers: /jj-pr, "push and open the PR", "submit this bookmark",
+  "open/update the PR for <bookmark>". Requires a colocated jj-git repo with
+  an `origin` remote and `gh` authenticated; orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

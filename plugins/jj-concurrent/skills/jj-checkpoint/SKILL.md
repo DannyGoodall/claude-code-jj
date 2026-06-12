@@ -1,17 +1,13 @@
 ---
 name: jj-checkpoint
 description: |
-  Record a named, op-log-based save point before a deliberately risky
-  orchestration step (a fan-out integration that rebases several workers'
-  changes, a large history rewrite). Captures the repository's current
-  operation id (resolved from `jj op log`) under a human-supplied `<label>` and
-  persists it as a checkpoint record in the orchestrator's agent-plan manifest,
-  so `/jj-rewind [label]` can later roll the whole repo back to it via
-  `jj op restore`. Triggers: /jj-checkpoint, "checkpoint before this rebase",
-  "record a save point", "label this op". Recording is strictly read-only with
-  respect to history — it only remembers the current op id, never mutates it.
-  Orchestrator-only (owns the agent-plan manifest); never invoked inside a
-  worker. Requires a jj repo (every jj repo has an operation log).
+  Record a named, op-log-based save point before a risky orchestration step (a
+  fan-out integration, a large history rewrite). Captures the current
+  operation id under a human-supplied <label> in the agent-plan manifest so
+  /jj-rewind [label] can roll the whole repo back via `jj op restore`;
+  recording itself is read-only with respect to history. Triggers: /jj-
+  checkpoint, "checkpoint before this rebase", "record a save point", "label
+  this op". Requires a jj repo; orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

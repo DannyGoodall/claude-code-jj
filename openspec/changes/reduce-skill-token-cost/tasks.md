@@ -8,8 +8,8 @@
 
 ## 2. Stage 1 — Description trim (commit 2)
 
-- [ ] 2.1 For each of the 16 SKILL.md files: rewrite the frontmatter description to ≤700 chars (one sentence of what, ≤4 trigger phrases, hard preconditions only); before deleting any operative detail from the description, locate it in the body and move it there if absent (verify, don't assume)
-- [ ] 2.2 Run lint + manifest check; capture per-file counts; commit
+- [x] 2.1 For each of the 16 SKILL.md files: rewrite the frontmatter description to ≤700 chars (one sentence of what, ≤4 trigger phrases, hard preconditions only); before deleting any operative detail from the description, locate it in the body and move it there if absent (verify, don't assume)
+- [x] 2.2 Run lint + manifest check; capture per-file counts; commit
 
 ## 3. Stage 2 — Shared contract (commit 3)
 
