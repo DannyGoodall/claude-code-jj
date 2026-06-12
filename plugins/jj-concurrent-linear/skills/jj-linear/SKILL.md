@@ -179,7 +179,7 @@ slower, racy under concurrent fan-outs, and prone to title collisions):
 
 Where creation is skipped, **no `{ umbrellaId, subIssueId }` entry is written**.
 The reconcile half then finds no sub-issue recorded for those workers and its
-existing **"no sub-issue recorded → skip-and-note, no fallback"** rule (§4.2)
+existing **"no sub-issue recorded → skip-and-note, no fallback"** rule (§3.2)
 handles it cleanly — both halves share one degradation story.
 
 ### 1.7 The worker stays Linear-agnostic
@@ -208,8 +208,8 @@ the target of every report-driven update below.
 
 - If **no sub-issue is recorded** for that workspace path → **skip-and-note**:
   surface a non-fatal note in the reconcile report and **do not** fall back to
-  the umbrella or any sibling sub-issue (§4.2).
-- If the **Linear MCP is unavailable** → **skip-and-note** and proceed (§4.1).
+  the umbrella or any sibling sub-issue (§3.2).
+- If the **Linear MCP is unavailable** → **skip-and-note** and proceed (§3.1).
 
 ### 2.2 Mapping table (single source of truth)
 
@@ -219,17 +219,17 @@ Derive the Linear update **solely** from the documented report fields
 
 | Report condition | Linear update to the worker's sub-issue |
 |---|---|
-| `blocked_on` null **AND** `conflicts_seen` null (clean finish) | transition in-progress → done (**idempotent**, §3.2) |
-| `blocked_on` non-null | post a comment with the blocker text; **do NOT** mark done; leave needing-attention (§3.3) |
-| `conflicts_seen` non-null | post a comment describing the conflict; **do NOT** mark done (§3.4) |
-| no report at all (stall, resume-in-place) | **no update**; wait for a successor's report (§4.3) |
-| Linear MCP unavailable / no sub-issue recorded | skip; note in reconcile report; integration proceeds (§4.1 / §4.2) |
+| `blocked_on` null **AND** `conflicts_seen` null (clean finish) | transition in-progress → done (**idempotent**, §2.3) |
+| `blocked_on` non-null | post a comment with the blocker text; **do NOT** mark done; leave needing-attention (§2.4) |
+| `conflicts_seen` non-null | post a comment describing the conflict; **do NOT** mark done (§2.5) |
+| no report at all (stall, resume-in-place) | **no update**; wait for a successor's report (§3.3) |
+| Linear MCP unavailable / no sub-issue recorded | skip; note in reconcile report; integration proceeds (§3.1 / §3.2) |
 
 `submitted` is **not** a finish signal — it is always `false` for workers (the
 orchestrator pushes). A clean finish is `blocked_on` **and** `conflicts_seen`
 both null.
 
-### 3.2 Clean-finish transition (idempotent)
+### 2.3 Clean-finish transition (idempotent)
 
 When `blocked_on` and `conflicts_seen` are **both null**, transition the
 sub-issue from its in-progress state to its done state via the Linear MCP.
@@ -239,21 +239,21 @@ state first; if it is already done, the transition is a **no-op** (not a
 duplicate transition, not an error). Reconcile can be retried; re-applying the
 same clean report must leave the sub-issue done with no side effects.
 
-### 3.3 Blocker comment
+### 2.4 Blocker comment
 
 When `blocked_on` is **non-null**, post a comment to the sub-issue carrying the
 blocker text, and **do NOT** transition to done. Leave the sub-issue signalling
 attention is needed — remaining in-progress, or moved to a dedicated "Blocked"
 state if the team's workflow defines one (configurable per team).
 
-### 3.4 Conflict comment
+### 2.5 Conflict comment
 
 When `conflicts_seen` is **non-null**, post a comment to the sub-issue describing
 the conflict, and **do NOT** transition to done. (A report can carry both
 `blocked_on` and `conflicts_seen`; post the relevant comment(s) and withhold the
 done transition in either case.)
 
-### 3.5 Folding context into comments (never a state driver)
+### 2.6 Folding context into comments (never a state driver)
 
 `tests_run`, `changes`, and `notes` **MAY** be folded into the done-transition
 comment or the blocker/conflict comment as context (e.g. "tests: vitest run —
@@ -261,23 +261,23 @@ pass", the list of change-ids, integration notes). They are **context only** —
 they **never by themselves drive a state change**. The state transition is driven
 strictly by the §2.2 mapping (the `blocked_on` / `conflicts_seen` nullity).
 
-## 4. Failure & edge handling
+## 3. Failure & edge handling
 
-### 4.1 Linear MCP unavailable → skip-and-note
+### 3.1 Linear MCP unavailable → skip-and-note
 
 If the Linear MCP server is not reachable, **skip** the Linear update and surface
 a non-fatal note in the orchestrator's reconcile report. The worker's
 integration (rebase / merge / teardown) **proceeds unaffected** — a Linear
 outage or latency is never fatal and never blocks workspace integration.
 
-### 4.2 No recorded sub-issue → skip-and-note, never fall back
+### 3.2 No recorded sub-issue → skip-and-note, never fall back
 
 If the manifest has no sub-issue ID keyed to the reporting worker's workspace
 path, **skip** the Linear update for that worker and note the missing mapping.
 **Never** update the umbrella or any sibling sub-issue as a fallback — keying is
 strict on workspace path.
 
-### 4.3 Stalled / no-report worker → leave the sub-issue untouched
+### 3.3 Stalled / no-report worker → leave the sub-issue untouched
 
 A worker that dies **without emitting a report** (recovered by the orchestrator's
 resume-in-place) leaves its sub-issue **unchanged**. No report ⇒ no update. Only
@@ -285,7 +285,7 @@ a real report — from the original worker or a resume-in-place successor in the
 **same** workspace — drives the next Linear update for that sub-issue. A stall
 must **never** silently mark a sub-issue done.
 
-### 4.4 Last-comment guard (no duplicate blocker comment)
+### 3.4 Last-comment guard (no duplicate blocker comment)
 
 Reconcile can be retried. Comments are append-only, so before posting a
 blocker/conflict comment, **check the sub-issue's last comment**: if it is
@@ -294,7 +294,7 @@ reconcile retry from posting the same blocker comment twice.
 
 <!-- BEGIN jj-linear-reconcile (umbrella summary + human-gate) — owned by jj-linear-reconcile-summary; edit only this delimited block -->
 
-## 5. Reconcile — umbrella summary + human-gate sub-issue
+## 4. Reconcile — umbrella summary + human-gate sub-issue
 
 A **separate reconcile-time concern** from §2's per-worker sub-issue status sync.
 Where §2 maps a report to *that worker's status sub-issue* (the `jj-linear-sync`
@@ -313,7 +313,7 @@ MCP). Where the plugin is **not** enabled, **no umbrella summary comment is
 posted and no human-gate sub-issue is created**, and the orchestrator reconciles
 workers exactly as bare `jj-concurrent` does — no triggers, no Linear calls.
 
-### 5.1 Inputs (read-only; worker stays Linear-agnostic)
+### 4.1 Inputs (read-only; worker stays Linear-agnostic)
 
 Derive everything below **solely** from existing inputs — no new report field,
 no Linear identifier handed to the worker:
@@ -333,13 +333,13 @@ the post target.
 
 - If **no umbrella is recorded** for that workspace path → **skip-and-note**:
   surface a non-fatal note in the reconcile report and **never** fall back to a
-  sibling/unrelated issue (§5.5).
-- If the **Linear MCP is unavailable** → **skip-and-note** and proceed (§5.5).
+  sibling/unrelated issue (§4.5).
+- If the **Linear MCP is unavailable** → **skip-and-note** and proceed (§4.5).
 - A **stalled / no-report worker** (recovered by resume-in-place) produces **no**
   umbrella summary and **no** human-gate sub-issue; only a successor's real
-  report from the **same** workspace drives the next umbrella update (§5.5).
+  report from the **same** workspace drives the next umbrella update (§4.5).
 
-### 5.2 The four-section umbrella summary (single source of truth)
+### 4.2 The four-section umbrella summary (single source of truth)
 
 Compose **one** structured comment with exactly these four sections, each mapped
 to a documented source. The summary **never invents content beyond these
@@ -353,12 +353,12 @@ rather than fabricated prose.
 | **Test results** | worker report `tests_run` + the `jj-openspec-binding` verify outcome (pass/fail) |
 | **PR link** | reconcile-tail push/PR output when a PR was opened; else **"no PR"** with the integrated change-id(s) |
 
-When a human-gate sub-issue is raised (§5.4), the summary **references** that it
+When a human-gate sub-issue is raised (§4.4), the summary **references** that it
 was raised so the umbrella reader sees the residual human work.
 
-### 5.3 Post the summary (idempotent on retry)
+### 4.3 Post the summary (idempotent on retry)
 
-Post the §5.2 comment as a **single** comment to the resolved umbrella issue via
+Post the §4.2 comment as a **single** comment to the resolved umbrella issue via
 the Linear MCP.
 
 **Idempotent — last-summary guard:** reconcile MAY be retried. Before posting,
@@ -367,7 +367,7 @@ if the comment about to be posted is **byte-identical**, **skip** the post (no
 duplicate, no error). A retried reconcile with the same report and outcome must
 not litter the umbrella with repeated summaries.
 
-### 5.4 Auto human-gate sub-issue (precise trigger)
+### 4.4 Auto human-gate sub-issue (precise trigger)
 
 **Trigger — manual/visual signal only.** Create a `ready-for-human` sub-issue
 **only** when the worker report or the verify outcome carries a
@@ -400,7 +400,7 @@ This makes the sub-issue actionable by a human with no session context.
 in the team's Linear workspace. If it is absent, **skip-and-note** (consistent
 with best-effort) rather than creating the label.
 
-### 5.5 Failure & edge handling (best-effort)
+### 4.5 Failure & edge handling (best-effort)
 
 Every Linear call in this section — the summary comment and the human-gate
 sub-issue create — is **best-effort**:
@@ -414,7 +414,7 @@ sub-issue create — is **best-effort**:
 - **Stalled / no-report worker** → no umbrella summary and no human-gate
   sub-issue until a successor in the **same** workspace returns a report.
 
-### 5.6 Relationship to §2 / `jj-linear-sync` (non-goals held apart)
+### 4.6 Relationship to §2 / `jj-linear-sync` (non-goals held apart)
 
 This umbrella-summary + human-gate concern is **disjoint** from §2's status sync:
 
@@ -439,7 +439,7 @@ Linear identifiers, so the binding lives at its reconcile point. Dispatch record
 up by `report.workspace` and applies the §2.2 mapping — idempotent done
 transition on a clean finish, blocker/conflict comment otherwise — best-effort,
 strictly keyed, never blocking integration, never marking a stall done. Layered
-on top (§5, the `jj-linear-reconcile` capability), reconcile also posts a
+on top (§4, the `jj-linear-reconcile` capability), reconcile also posts a
 four-section **umbrella summary** (what changed / root cause / test results / PR
 link) and, only on a manual/visual signal, raises a `ready-for-human` **human-gate
 sub-issue** — both best-effort, idempotent, and strictly keyed on workspace path.

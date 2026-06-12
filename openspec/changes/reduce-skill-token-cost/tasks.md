@@ -39,9 +39,9 @@
 
 ## 7. Stage 6 — jj-linear numbering + trigger caps (commit 7)
 
-- [ ] 7.1 Fix jj-linear heading drift (§2.1, §2.2 then §3.2–§3.5: renumber so sections are contiguous and §5.6's reference to "§2" still points at the right section); grep repo for references to the renumbered headings
-- [ ] 7.2 Sweep all 16 descriptions to confirm ≤4 trigger phrases (should already hold from Stage 1; fix stragglers)
-- [ ] 7.3 Run lint + manifest check; capture counts; commit
+- [x] 7.1 Fix jj-linear heading drift (§2.1, §2.2 then §3.2–§3.5: renumber so sections are contiguous and §5.6's reference to "§2" still points at the right section); grep repo for references to the renumbered headings
+- [x] 7.2 Sweep all 16 descriptions to confirm ≤4 trigger phrases (should already hold from Stage 1; fix stragglers)
+- [x] 7.3 Run lint + manifest check; capture counts; commit
 
 ## 8. Final verification + report
 
