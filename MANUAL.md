@@ -29,6 +29,7 @@ New to jj? Read [JJ_OVERVIEW.md](JJ_OVERVIEW.md) first — this manual assumes t
 - [Orchestrating OpenSpec changes: /jj-openspec](#orchestrating-openspec-changes-jj-openspec)
 - [Reporting to Linear: /jj-linear](#reporting-to-linear-jj-linear)
 - [The hooks (snapshot + guard)](#the-hooks-snapshot--guard)
+- [Publishing & updating the plugins](#publishing--updating-the-plugins)
 - [Orchestrator jj quick reference](#orchestrator-jj-quick-reference)
 - [Gotchas & troubleshooting](#gotchas--troubleshooting)
 
@@ -341,6 +342,83 @@ A cheap, hang-proof, string-matching backstop. It **only enforces inside a jj re
 - **`jj bookmark` / `jj git push` from a worker workspace** (since v0.3.0) — the orchestrator-only rule, now enforced in the guard, not just the worker contract. The guard classifies the role from the workspace (`.jj/repo` is a directory in the orchestrator's primary workspace, a file in a linked worker workspace) and blocks bookmark/push only when the role is `worker`; the orchestrator's primary workspace is unaffected, and it fails open when the role is unknown or outside any jj repo.
 
 It never invokes jj (so it cannot itself hang). Known limits (the worker contract is the primary line, the guard is the backstop): it matches git/jj *mentions* in a command string, not only invocations, and `git -C <dir> <verb>` slips past — and because it string-matches, even a non-interactive `jj resolve --list` is blocked (resolve conflicts by editing markers instead, which is the prescribed workflow anyway).
+
+---
+
+## Publishing & updating the plugins
+
+This section is for the **maintainer** of this marketplace, not the consumer. There are two distinct loops that are easy to conflate: the **publish** side (shipping new plugin versions from this repo) and the **consume** side (refreshing an installed copy so the new versions actually load). The trap in the middle: editing a file under `plugins/` does **nothing** to a session that installed from the marketplace until you bump the version, push, refresh, reinstall, **and restart** — and hooks never hot-reload.
+
+### Where versions live
+
+| File | Carries a version? | Role |
+|------|--------------------|------|
+| `.claude-plugin/marketplace.json` | **No** — descriptions only | Lists the four plugins; served straight from the GitHub repo |
+| `plugins/<name>/.claude-plugin/plugin.json` | **Yes** (`"version"`) | The **only** signal that an update exists — what `claude plugin marketplace update` compares against |
+
+Because the marketplace manifest has no versions, the per-plugin `version` in `plugin.json` is the entire update mechanism. Merging to `main` **is** the publish step — there is no separate registry to push to. (`/jj-release` cuts a GitHub *release tag*, which is **tag-only** and does **not** bump `plugin.json`; the marketplace ignores release tags. The two are independent.)
+
+### Publish runbook (maintainer)
+
+```text
+1. Edit the skill / hook / agent files under plugins/<plugin>/...
+2. Bump "version" in each CHANGED plugin's plugins/<name>/.claude-plugin/plugin.json
+   (only the plugins you actually touched — SemVer: fix→patch, feat→minor, breaking→major)
+3. If behaviour changed, update the description in BOTH places, kept in parallel:
+     - plugins/<name>/.claude-plugin/plugin.json  ("description")
+     - .claude-plugin/marketplace.json            (that plugin's entry)
+4. Validate locally (mirrors CI — see below)
+5. Commit on a branch and open a PR (you may be on a detached HEAD: `* (no branch)` — branch first)
+6. Merge to main  ← this is the publish
+```
+
+**Validate locally before pushing** — the same three gates CI runs (`.github/workflows/ci.yml`), plus the skills linter:
+
+```bash
+# JSON manifests parse
+for f in .claude-plugin/marketplace.json plugins/*/.claude-plugin/plugin.json; do
+  python3 -m json.tool "$f" >/dev/null && echo "ok $f"
+done
+# hook scripts (error severity)
+shellcheck -S error plugins/*/hooks/scripts/*.sh
+# OpenSpec specs/changes (only if you touched them)
+openspec validate --all --strict
+# skills lint
+python3 scripts/lint-skills.py
+```
+
+### Make the update live (consume side — also the dev-loop gap)
+
+After the new versions are on `main`, **nothing in a running session changes** until you refresh and reinstall. For each plugin you bumped:
+
+```bash
+claude plugin marketplace update claude-code-jj          # refresh the manifest from GitHub
+claude plugin install jj-concurrent@claude-code-jj        # reinstall each CHANGED plugin
+claude plugin install jj-lifecycle@claude-code-jj
+claude plugin install jj-concurrent-openspec@claude-code-jj
+claude plugin install jj-concurrent-linear@claude-code-jj
+```
+
+Then **quit and restart Claude Code**. Newly installed skills, the worker agent, and the snapshot + guard hooks only take effect in a session started *after* install — **hooks do not hot-reload**.
+
+**Tighter inner loop while iterating.** Registering the marketplace from a **local clone path** instead of GitHub lets a `marketplace update` + reinstall pick up working-tree edits **without a push**:
+
+```bash
+claude plugin marketplace add /Users/dannygoodall/Dev/Code/claude-code-jj   # local path
+# ...edit, then: marketplace update + reinstall + restart, no commit needed
+```
+
+Switch the registration back to `DannyGoodall/claude-code-jj` for the real publish so you're testing what consumers actually get.
+
+### Consumers updating their installed copy
+
+Anyone else picks up your published bumps with the same two commands (no push, no restart trap they need to know the internals of):
+
+```bash
+claude plugin marketplace update claude-code-jj
+claude plugin install <plugin>@claude-code-jj   # for each plugin they use
+# then restart Claude Code
+```
 
 ---
 
