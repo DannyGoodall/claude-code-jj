@@ -35,9 +35,9 @@ reviews the result via `jj op show -p`, and surfaces a one-command
 `jj op restore` undo (§3). Either way you can see the hunk-to-commit placement
 and back the whole thing out; a missing `--dry-run` is never a blocker.
 
-Substrate knowledge (jj command surface, revsets, filesets, non-interactive
-rules, output formats) comes from the installed `jj-vcs` skill — defer to it for
-jj command detail; this skill owns only the preview → absorb → report
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail; this skill owns only the preview → absorb → report
 choreography.
 
 ## Preconditions (verify, don't assume)

@@ -27,8 +27,9 @@ manifest. `jj op restore <op-id>` is the exact inverse, so the op id is all
 `/jj-rewind` needs. The companion rollback skill is
 [`/jj-rewind`](../jj-rewind/SKILL.md).
 
-Substrate knowledge (jj command surface, non-interactive rules, output formats)
-comes from the installed `jj-vcs` skill — defer to it for jj command detail;
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail;
 this skill owns only the checkpoint-recording choreography.
 
 ## Preconditions (verify, don't assume)
@@ -43,10 +44,8 @@ this skill owns only the checkpoint-recording choreography.
   `jj op log` to *read* the current op id and writes only the manifest record.
   It MUST NOT create, abandon, rebase, or restore any operation — so taking a
   checkpoint can never itself become the thing that needs undoing.
-- **Op-log only, never deletes repo metadata.** Uses `jj op log` exclusively;
-  never deletes `.jj` (or any repository metadata), never runs raw mutating git,
-  never touches bookmarks or push. Non-interactive jj only (`--no-pager`, no
-  editor, no `-i`/`--interactive`).
+- **Op-log only.** Uses `jj op log` exclusively; never touches bookmarks or
+  push (the shared contract covers the `.jj`-deletion and raw-git bans).
 
 ## Arguments
 
@@ -153,7 +152,6 @@ recent checkpoint).
   checkpoint — recording must never be the thing that needs undoing.
 - **Op-log only.** Never delete `.jj` or any repo metadata; never run raw
   mutating git; never touch bookmarks or push.
-- **Non-interactive jj only.** `--no-pager`; no editor; no `-i`/`--interactive`.
 - **Manifest is the only store.** No new external/dedicated checkpoint file;
   records ride in the orchestrator-owned `.jj-agent-plan.json`.
 

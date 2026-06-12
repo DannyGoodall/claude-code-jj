@@ -31,9 +31,9 @@ cross-reference comment so a reviewer on any PR can navigate the whole stack. It
 does NOT re-implement push / `jj bookmark track` / PR-body generation — those
 are owned by `/jj-pr`.
 
-Substrate knowledge (jj command surface, revsets, templates, non-interactive
-rules) comes from the installed `jj-vcs` skill — defer to it for jj command
-detail; this skill owns only the stacked-PR choreography.
+Shared contract: [jj-delegate §Roles & shared conventions](../jj-delegate/SKILL.md)
+— orchestrator-only, non-interactive jj; defer to the installed `jj-vcs`
+skill for jj command detail; this skill owns only the stacked-PR choreography.
 
 ## Preconditions (verify, don't assume)
 
