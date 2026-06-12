@@ -2,9 +2,9 @@
 
 ## 1. Stage 0 — Verification tooling (BEFORE any content change; commit 1)
 
-- [ ] 1.1 Write `scripts/lint-skills.py` (python3 stdlib): fail on frontmatter description >1024 chars (warn >700); fail on missing `name`/`description` frontmatter keys; fail on any relative link or intra-file anchor in a plugin SKILL.md that doesn't resolve; fail on >1 prose occurrence per file (outside fenced code blocks) of the boilerplate markers "Substrate knowledge", "never invoked inside a worker", and the non-interactive-contract sentence
-- [ ] 1.2 Write `scripts/skill-content-manifest.py` with `snapshot` (extract every fenced code block + table from all 16 plugin SKILL.md files, whitespace-normalized, content-hash-keyed, written to `scripts/skill-content-baseline.json`) and `check` (every baseline entry must exist somewhere in the repo; `--allow-drop <hash>` allowlist for deliberate deletions; non-zero exit + item/source report otherwise)
-- [ ] 1.3 Run `snapshot` and the lint to produce the baseline; record per-file byte/line/description-char counts (the report's "before" column); commit tooling + baseline + lint-baseline notes
+- [x] 1.1 Write `scripts/lint-skills.py` (python3 stdlib): fail on frontmatter description >1024 chars (warn >700); fail on missing `name`/`description` frontmatter keys; fail on any relative link or intra-file anchor in a plugin SKILL.md that doesn't resolve; fail on >1 prose occurrence per file (outside fenced code blocks) of the boilerplate markers "Substrate knowledge", "never invoked inside a worker", and the non-interactive-contract sentence
+- [x] 1.2 Write `scripts/skill-content-manifest.py` with `snapshot` (extract every fenced code block + table from all 16 plugin SKILL.md files, whitespace-normalized, content-hash-keyed, written to `scripts/skill-content-baseline.json`) and `check` (every baseline entry must exist somewhere in the repo; `--allow-drop <hash>` allowlist for deliberate deletions; non-zero exit + item/source report otherwise)
+- [x] 1.3 Run `snapshot` and the lint to produce the baseline; record per-file byte/line/description-char counts (the report's "before" column); commit tooling + baseline + lint-baseline notes
 
 ## 2. Stage 1 — Description trim (commit 2)
 

@@ -1,0 +1,82 @@
+{
+ "plugins/jj-concurrent-linear/skills/jj-burndown/SKILL.md": {
+  "desc_chars": 1715,
+  "bytes": 16943,
+  "lines": 324
+ },
+ "plugins/jj-concurrent-linear/skills/jj-from-linear/SKILL.md": {
+  "desc_chars": 1426,
+  "bytes": 13602,
+  "lines": 265
+ },
+ "plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md": {
+  "desc_chars": 1091,
+  "bytes": 23670,
+  "lines": 451
+ },
+ "plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md": {
+  "desc_chars": 1174,
+  "bytes": 42432,
+  "lines": 735
+ },
+ "plugins/jj-concurrent/skills/jj-absorb/SKILL.md": {
+  "desc_chars": 1371,
+  "bytes": 15879,
+  "lines": 329
+ },
+ "plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md": {
+  "desc_chars": 800,
+  "bytes": 7651,
+  "lines": 171
+ },
+ "plugins/jj-concurrent/skills/jj-delegate/SKILL.md": {
+  "desc_chars": 610,
+  "bytes": 23648,
+  "lines": 405
+ },
+ "plugins/jj-concurrent/skills/jj-fleet/SKILL.md": {
+  "desc_chars": 890,
+  "bytes": 12613,
+  "lines": 244
+ },
+ "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md": {
+  "desc_chars": 1647,
+  "bytes": 17076,
+  "lines": 340
+ },
+ "plugins/jj-concurrent/skills/jj-land/SKILL.md": {
+  "desc_chars": 1795,
+  "bytes": 21436,
+  "lines": 424
+ },
+ "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md": {
+  "desc_chars": 1361,
+  "bytes": 15758,
+  "lines": 320
+ },
+ "plugins/jj-concurrent/skills/jj-pr/SKILL.md": {
+  "desc_chars": 812,
+  "bytes": 9290,
+  "lines": 228
+ },
+ "plugins/jj-concurrent/skills/jj-preview/SKILL.md": {
+  "desc_chars": 1273,
+  "bytes": 11133,
+  "lines": 231
+ },
+ "plugins/jj-concurrent/skills/jj-rewind/SKILL.md": {
+  "desc_chars": 807,
+  "bytes": 9025,
+  "lines": 204
+ },
+ "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md": {
+  "desc_chars": 1080,
+  "bytes": 15188,
+  "lines": 331
+ },
+ "plugins/jj-lifecycle/skills/jj-release/SKILL.md": {
+  "desc_chars": 1714,
+  "bytes": 21653,
+  "lines": 444
+ }
+}
