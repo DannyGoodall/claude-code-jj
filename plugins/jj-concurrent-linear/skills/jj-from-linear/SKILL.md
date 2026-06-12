@@ -1,26 +1,16 @@
 ---
 name: jj-from-linear
 description: |
-  Inbound Linear→worker binding over the jj-concurrent orchestrator: one
-  command bridges a triaged Linear issue to a dispatched jj-delegate worker.
-  /jj-from-linear <issue> resolves a single Linear issue through the Linear
-  MCP, maps it to exactly one jj-delegate workload in one of two forms —
-  referenced opsx change (the issue names an existing openspec/changes/<name>/,
-  dispatched as the opsx shape over it) or slice spec (the issue body is the
-  brief) — derives a deterministic bookmark from the issue identifier
-  (PTS-18 → pts-18, optionally under a stable prefix), records { issueId,
-  issueUrl } in the agent-plan manifest keyed by workspace path, and hands off
-  to jj-delegate. The worker stays Linear-agnostic; link-back to the PR/change
-  rides the issue-derived bookmark + the manifest record. It fails closed when
-  the Linear MCP is unreachable, the issue does not resolve, or a referenced
-  change does not exist. It owns no jj/workspace choreography (that is
-  jj-delegate's) and no OpenSpec artifact rules (those are the opsx skills').
-  Triggers: /jj-from-linear, /jj-from-linear <issue>, "dispatch a worker from
-  this Linear issue", "put a jj worker on PTS-18", "run this triaged Linear
-  issue as a jj-delegate slice". Requires: the jj-concurrent plugin
-  (jj-delegate + jj-workspace-worker) and a configured Linear MCP server
-  (mcp__linear-server__*); optional reach to the jj-openspec binding. Enable
-  only in Linear-tracked repos.
+  Inbound Linear-to-worker binding: bridge one triaged Linear issue to a
+  dispatched jj-delegate worker. Resolves the issue via the Linear MCP, maps
+  it to exactly one workload — a referenced opsx change or the issue body as a
+  slice brief — derives a deterministic bookmark from the issue identifier
+  (PTS-18 -> pts-18), records { issueId, issueUrl } in the agent-plan
+  manifest, and hands off to jj-delegate; fails closed when Linear is
+  unreachable, the issue does not resolve, or a referenced change does not
+  exist. Triggers: /jj-from-linear <issue>, "dispatch a worker from this
+  Linear issue", "put a jj worker on PTS-18". Requires the jj-concurrent
+  plugin and a configured Linear MCP server.
 metadata:
   version: "0.1.0"
   author: outfitter-style

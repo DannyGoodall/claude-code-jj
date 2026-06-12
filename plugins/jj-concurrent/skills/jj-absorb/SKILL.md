@@ -2,23 +2,14 @@
 name: jj-absorb
 description: |
   Distribute scattered working-copy fixes into the downstack commits they
-  belong to — the jj analog of the amend-after-review loop — in one
-  orchestrator step. After a review pass leaves many small hunks in one working
-  copy, each logically belonging to a different commit deeper in the stack,
-  `/jj-absorb` previews the placement (by `jj absorb --dry-run` where the
-  installed jj supports it, otherwise by an op-log review-and-undo fallback),
-  runs the mutating `jj absorb` to move each hunk into the closest downstack
-  commit that last touched those lines, reports where each hunk landed (keyed to
-  the destination change-id + description), and leaves any ambiguous hunk in the
-  working copy with a named manual escape hatch. Accepts an optional fileset and
-  optional `--into <rev>`/downstack-target to scope which changes are absorbed.
-  Triggers: /jj-absorb, "absorb these fixes", "amend each commit after review",
-  "distribute working-copy hunks downstack". The reconcile-tail amend step for
-  /jj-delegate. Orchestrator-only (reshapes the orchestrator's own stack); never
-  invoked inside a worker, moves no bookmarks, performs no push, runs every
-  command non-interactively (`--no-pager`, no `-i`). Requires a jj that ships
-  `jj absorb`; uses `--dry-run` for the pre-mutation preview when available and
-  otherwise an op-log (`jj op show -p` + `jj op restore`) review-and-undo fallback.
+  belong to — the jj analog of the amend-after-review loop. Previews placement
+  (`jj absorb --dry-run` where available, else an op-log review-and-undo
+  fallback), runs `jj absorb`, reports where each hunk landed, and leaves
+  ambiguous hunks in the working copy with a manual escape hatch. Accepts an
+  optional fileset and `--into <rev>` to scope the absorb. Triggers: /jj-
+  absorb, "absorb these fixes", "amend each commit after review", "distribute
+  working-copy hunks downstack". Requires a jj that ships `jj absorb`;
+  orchestrator-only.
 metadata:
   version: "0.2.0"
   author: outfitter-style

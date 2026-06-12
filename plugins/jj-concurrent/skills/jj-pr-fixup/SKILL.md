@@ -1,24 +1,16 @@
 ---
 name: jj-pr-fixup
 description: |
-  Run the automated amend-after-review loop over a GitHub PR in one
-  orchestrator step — the jj successor to Graphite's amend-after-review. Given a
-  PR (number or URL), it reads that PR's review comments via `gh` (file/line-
-  anchored review threads + the review summary, unresolved only), composes them
-  into a single worker brief, dispatches a `jj-workspace-worker` on a workspace
-  based on the PR head (`jj workspace add -r <pr-head-rev>`) so fixes apply on
-  top of exactly the commits under review, lands the worker's working-copy fixes
-  into their owning downstack commits via the `/jj-absorb` step, then re-pushes
-  and updates the same PR in place via the `/jj-pr` step — so a reviewer asking
-  to fix commit B gets commit B amended, not a fixup commit dangling at the tip.
-  Triggers: /jj-pr-fixup, "fix up the PR from review comments", "amend the PR's
-  commits after review", "address review comments and update the PR". Composes
-  /jj-delegate (dispatch), /jj-absorb (land), and /jj-pr (push/update); defines
-  only the comment→brief mapping, PR-head basing, and the orchestration.
-  Orchestrator-only (owns workspace lifecycle, absorb, refs, push); never invoked
-  inside a worker. Requires a colocated jj↔git repo with an `origin` remote, the
-  PR head branch fetchable locally, `gh` authenticated with PR-comment read
-  scope, and the `/jj-absorb` and `/jj-pr` skills present.
+  Run the automated amend-after-review loop over a GitHub PR: read the PR's
+  unresolved review comments via `gh`, compose them into a worker brief,
+  dispatch a jj-workspace-worker on a workspace based at the PR head, absorb
+  the fixes into their owning downstack commits (/jj-absorb), then re-push and
+  update the same PR (/jj-pr) — so a request to fix commit B amends commit B,
+  not a fixup at the tip. Triggers: /jj-pr-fixup, "fix up the PR from review
+  comments", "amend the PR's commits after review", "address review comments
+  and update the PR". Requires a colocated jj-git repo, `gh` authenticated
+  with PR-comment read scope, and the /jj-absorb and /jj-pr skills;
+  orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

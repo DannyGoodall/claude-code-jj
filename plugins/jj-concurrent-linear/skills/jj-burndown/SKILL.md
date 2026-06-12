@@ -1,29 +1,16 @@
 ---
 name: jj-burndown
 description: |
-  Board-as-work-queue driver over the jj-concurrent orchestrator: turn a Linear
-  board's ready-for-agent backlog into a live, bounded, concurrent burndown. At
-  /jj-burndown <board> it resolves the board (by name or id), selects the
-  ready-for-agent issues as a deterministic, re-queryable candidate set, then
-  drains them under a moderate concurrency cap (default 3, configurable) as a
-  sliding window — dispatching one jj-delegate worker per issue (the issue body
-  is the worker's workload), and on each landing pulling-and-dispatching the
-  next ready issue so in-flight never exceeds the cap. As each worker reports it
-  updates that issue (in-progress → done on a clean finish; blocker/conflict
-  comment + hold otherwise), reusing the jj-linear-sync (C2) report-to-Linear
-  mapping when that binding is enabled and degrading to a minimal inline update
-  when absent. It re-queries the board as it drains (picking up newly-labelled
-  issues, never re-dispatching an in-flight/completed one) and emits a live
-  burndown readout (queue-remaining / in-flight / done / blocked) on each window
-  advance plus a final summary at the drained fixpoint.
-  Triggers: /jj-burndown, "burn down the board", "drain the ready-for-agent
-  backlog", "run the board as a work queue", "fan the board out under a cap".
-  Orchestrator-only (runs in the primary jj workspace; owns no jj/workspace
-  choreography — all provisioning/dispatch/integration/teardown is jj-delegate's).
-  Requires: the jj-concurrent plugin (jj-delegate + jj-workspace-worker) and a
-  configured Linear MCP server (mcp__linear-server__*). Enable only in
-  Linear-tracked repos. Composes with — but does NOT hard-depend on — the
-  jj-linear-sync (C2) status-sync and C1 umbrella/sub-issue bindings.
+  Board-as-work-queue driver over the jj-concurrent orchestrator: drain a
+  Linear board's ready-for-agent backlog as a live, bounded, concurrent
+  burndown. Resolves the board, selects ready issues deterministically,
+  dispatches one jj-delegate worker per issue under a sliding-window cap
+  (default 3), updates each issue as its worker reports (done, or blocker
+  comment + hold), re-queries the board as it drains, and emits a live readout
+  plus a final summary. Triggers: /jj-burndown <board>, "burn down the board",
+  "drain the ready-for-agent backlog", "run the board as a work queue".
+  Requires the jj-concurrent plugin and a configured Linear MCP server;
+  orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

@@ -1,21 +1,16 @@
 ---
 name: jj-linear
 description: |
-  Linear binding over the jj-concurrent orchestrator, in two halves that meet
-  only on the agent-plan manifest. At DISPATCH: auto-create one umbrella issue
-  per fan-out + one sub-issue per worker, label them ready-for-agent, and thread
-  { workspacePath → { umbrellaId, subIssueId } } into the manifest before any
-  worker is dispatched. At RECONCILE: map each worker's structured JSON report
-  to its sub-issue — transition in-progress → done on a clean finish, post a
-  blocker/conflict comment otherwise — keyed by the worker's workspace path; and
-  post a four-section umbrella summary (what changed / root cause / test results
-  / PR link), raising a ready-for-human human-gate sub-issue only on a
-  manual/visual signal.
-  Triggers: /jj-linear, "create Linear issues for the fan-out", "sync worker
-  reports to Linear", "update Linear sub-issues from the jj fan-out", "reconcile
-  workers into Linear", "post the umbrella summary to Linear". Requires: the
-  jj-concurrent plugin (jj-delegate + jj-workspace-worker) and a configured
-  Linear MCP server (mcp__linear-server__*). Enable only in Linear-tracked repos.
+  Linear binding over the jj-concurrent orchestrator, two halves meeting on
+  the agent-plan manifest: at dispatch, auto-create one umbrella issue per
+  fan-out plus one sub-issue per worker and thread the IDs into the manifest
+  before dispatch; at reconcile, map each worker's report to its sub-issue
+  (done on a clean finish, else a blocker/conflict comment) and post a four-
+  section umbrella summary, raising a human-gate sub-issue only on a
+  manual/visual signal. Triggers: /jj-linear, "create Linear issues for the
+  fan-out", "sync worker reports to Linear", "post the umbrella summary to
+  Linear". Requires the jj-concurrent plugin and a configured Linear MCP
+  server.
 metadata:
   version: "0.2.0"
   author: outfitter-style

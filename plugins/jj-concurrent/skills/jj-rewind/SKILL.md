@@ -1,17 +1,15 @@
 ---
 name: jj-rewind
 description: |
-  Roll the whole repository back to a checkpoint's captured operation via
-  `jj op restore <op-id>` — the rollback companion to `/jj-checkpoint`. Resolves
-  a `[label]` (or, bare, the most recently recorded checkpoint) to its stored op
-  id from the orchestrator's agent-plan manifest, prints a confirmation summary
-  (target checkpoint, the operations that will be undone, the affected
-  workspaces and bookmarks), and only then — after explicit confirmation —
-  restores. Because `jj op restore` is itself recorded as a new operation, the
-  rewind is itself reversible. Triggers: /jj-rewind, "undo back to the
-  checkpoint", "roll back that rebase", "restore to <label>". Orchestrator-only
-  (whole-repo undo affecting every workspace); never invoked inside a worker.
-  Requires a jj repo with at least one recorded checkpoint.
+  Roll the whole repository back to a checkpoint's captured operation via `jj
+  op restore` — the rollback companion to /jj-checkpoint. Resolves [label]
+  (bare: the most recent checkpoint) to its stored op id from the agent-plan
+  manifest, prints a confirmation summary (target, operations undone, affected
+  workspaces and bookmarks), and restores only after explicit confirmation;
+  the restore is itself a new operation, so a rewind is reversible. Triggers:
+  /jj-rewind, "undo back to the checkpoint", "roll back that rebase", "restore
+  to <label>". Requires a jj repo with at least one recorded checkpoint;
+  orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

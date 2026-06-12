@@ -1,23 +1,15 @@
 ---
 name: jj-preview
 description: |
-  Stand up a throwaway, read-only-to-history jj workspace at an arbitrary
-  revision (commit / change id / bookmark) so an operator can look at that
-  revision running as a real app — before its work is verified, archived, or
-  merged — without disturbing the working copy. Provisions a preview workspace
-  with `jj workspace add -r <rev> ../wt-preview-<slug>`, populates its
-  per-workspace environment by reusing the orchestrator's existing gitignored-
-  file copy (composing with the worktree-include convention where the project
-  declares one), draws a distinct port from the existing "assign a port per
-  worker that runs the app" convention so previews never collide, runs the
-  project dev/app command, reports the URL + PID, and tears the workspace down
-  cleanly (stop process → `jj workspace forget` → remove the throwaway dir).
-  Triggers: /jj-preview, "preview this change running", "stand up a dev env at
-  <rev>", "let me look at <rev> running". Strictly a preview — never moves a
-  bookmark, never pushes, never archives; read-only with respect to history
-  (`@` and all refs left undisturbed). Orchestrator-only (never invoked inside a
-  worker); only the orchestrator owns workspace provisioning and teardown.
-  Requires a jj repo (ideally colocated with git); no remote, no `gh`, no push.
+  Stand up a throwaway jj workspace at an arbitrary revision so an operator
+  can look at it running as a real app — before it is verified, archived, or
+  merged — without disturbing the working copy. Provisions with `jj workspace
+  add -r <rev>`, reuses the orchestrator's gitignored-file copy for per-
+  workspace env, draws a distinct port, runs the project dev/app command,
+  reports URL + PID, and tears everything down cleanly. Read-only to history:
+  never moves a bookmark, never pushes, never archives. Triggers: /jj-preview,
+  "preview this change running", "stand up a dev env at <rev>", "let me look
+  at <rev> running". Requires a jj repo; orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style

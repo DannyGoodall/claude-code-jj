@@ -1,20 +1,15 @@
 ---
 name: jj-stacked-pr
 description: |
-  Open or update a stack of GitHub PRs from a stitched linear jj stack — one PR
-  per bookmark, each based on its parent bookmark instead of trunk (the root on
-  trunk), so reviewers see only each change's own diff. Given an ordered list of
-  stacked bookmarks, or a single tip bookmark whose ancestry it walks, it derives
-  the parent chain from the jj stack topology, composes the per-bookmark `/jj-pr`
-  push-and-PR primitive bottom-up with the right `--base`, maintains a single
-  marker-delimited cross-reference stack-navigation comment on every PR, and
-  re-points PR bases idempotently when the stack is rebased, reordered, or has a
-  change dropped. Triggers: /jj-stacked-pr, "open the stacked PRs", "submit this
-  jj stack", "open/update stacked PRs for <tip>". The stacked submit step of the
-  /jj-delegate stitch-into-a-stack reconcile tail, alongside the single-change
-  /jj-pr step. Orchestrator-only (owns refs and push); never invoked inside a
-  worker. Requires a colocated jj↔git repo with an `origin` remote and `gh`
-  authenticated and supporting `pr create/edit --base` and `pr comment`.
+  Open or update a stack of GitHub PRs from a stitched linear jj stack — one
+  PR per bookmark, each based on its parent (root on trunk), so reviewers see
+  only each change's own diff. Derives the parent chain from stack topology,
+  composes the per-bookmark /jj-pr primitive bottom-up with the right
+  `--base`, maintains one marker-delimited stack-navigation comment on every
+  PR, and re-points PR bases idempotently after rebases, reorders, or drops.
+  Triggers: /jj-stacked-pr, "open the stacked PRs", "submit this jj stack",
+  "update stacked PRs for <tip>". Requires a colocated jj-git repo with an
+  `origin` remote and `gh` authenticated; orchestrator-only.
 metadata:
   version: "0.1.0"
   author: outfitter-style
