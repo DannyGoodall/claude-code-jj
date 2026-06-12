@@ -26,10 +26,10 @@
 
 ## 5. Stage 4 — jj-openspec diet (commit 5)
 
-- [ ] 5.1 Create `plugins/jj-concurrent-openspec/skills/jj-openspec/references/examples.md`; move the verify-GATE, independent-changes-landed-concurrently, and declared-dependency-stitched-stack worked examples there; keep "two disjoint groups fanned out into one branch" inline, compressed; link references/examples.md relatively from the SKILL.md
-- [ ] 5.2 Move the `opsx_filtered` wrapper into `plugins/jj-concurrent-openspec/skills/jj-openspec/scripts/opsx_filtered.sh`; SKILL.md invokes it by relative path
-- [ ] 5.3 Compress "Two orthogonal concurrency axes" and "Fallback guarantee" to ≤3 sentences each; move full text to root `DESIGN.md` only if it adds rationale not already there, else record the drop via `--allow-drop`
-- [ ] 5.4 Run lint + manifest check (moved blocks must match by content); capture counts; commit
+- [x] 5.1 Create `plugins/jj-concurrent-openspec/skills/jj-openspec/references/examples.md`; move the verify-GATE, independent-changes-landed-concurrently, and declared-dependency-stitched-stack worked examples there; keep "two disjoint groups fanned out into one branch" inline, compressed; link references/examples.md relatively from the SKILL.md
+- [x] 5.2 Move the `opsx_filtered` wrapper into `plugins/jj-concurrent-openspec/skills/jj-openspec/scripts/opsx_filtered.sh`; SKILL.md invokes it by relative path
+- [x] 5.3 Compress "Two orthogonal concurrency axes" and "Fallback guarantee" to ≤3 sentences each; move full text to root `DESIGN.md` only if it adds rationale not already there, else record the drop via `--allow-drop`
+- [x] 5.4 Run lint + manifest check (moved blocks must match by content); capture counts; commit
 
 ## 6. Stage 5 — Merge jj-checkpoint + jj-rewind (commit 6)
 

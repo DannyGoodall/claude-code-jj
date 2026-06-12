@@ -1,0 +1,66 @@
+{
+ "plugins/jj-concurrent-linear/skills/jj-burndown/SKILL.md": {
+  "bytes": 15859,
+  "lines": 311
+ },
+ "plugins/jj-concurrent-linear/skills/jj-from-linear/SKILL.md": {
+  "bytes": 12841,
+  "lines": 255
+ },
+ "plugins/jj-concurrent-linear/skills/jj-linear/SKILL.md": {
+  "bytes": 23223,
+  "lines": 446
+ },
+ "plugins/jj-concurrent-openspec/skills/jj-openspec/SKILL.md": {
+  "bytes": 35528,
+  "lines": 610
+ },
+ "plugins/jj-concurrent/skills/jj-absorb/SKILL.md": {
+  "bytes": 15101,
+  "lines": 320
+ },
+ "plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md": {
+  "bytes": 6119,
+  "lines": 146
+ },
+ "plugins/jj-concurrent/skills/jj-delegate/SKILL.md": {
+  "bytes": 24258,
+  "lines": 416
+ },
+ "plugins/jj-concurrent/skills/jj-fleet/SKILL.md": {
+  "bytes": 11770,
+  "lines": 231
+ },
+ "plugins/jj-concurrent/skills/jj-keep-current/SKILL.md": {
+  "bytes": 16112,
+  "lines": 328
+ },
+ "plugins/jj-concurrent/skills/jj-land/SKILL.md": {
+  "bytes": 20326,
+  "lines": 411
+ },
+ "plugins/jj-concurrent/skills/jj-pr-fixup/SKILL.md": {
+  "bytes": 15076,
+  "lines": 312
+ },
+ "plugins/jj-concurrent/skills/jj-pr/SKILL.md": {
+  "bytes": 9078,
+  "lines": 226
+ },
+ "plugins/jj-concurrent/skills/jj-preview/SKILL.md": {
+  "bytes": 9546,
+  "lines": 208
+ },
+ "plugins/jj-concurrent/skills/jj-rewind/SKILL.md": {
+  "bytes": 8149,
+  "lines": 191
+ },
+ "plugins/jj-concurrent/skills/jj-stacked-pr/SKILL.md": {
+  "bytes": 14771,
+  "lines": 326
+ },
+ "plugins/jj-lifecycle/skills/jj-release/SKILL.md": {
+  "bytes": 20600,
+  "lines": 431
+ }
+}
