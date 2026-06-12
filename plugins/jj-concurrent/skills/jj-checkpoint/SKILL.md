@@ -121,15 +121,7 @@ Read the manifest defensively (a schema addition elsewhere must not break this),
 and write back only the `checkpoints` change — never rewrite or drop the slice
 entries the manifest already carries.
 
-## 5. Confirm recording stayed read-only
-
-Before reporting success, confirm that **no history-mutating jj command ran**
-during this checkpoint: only `jj op log` (read) and a manifest file write
-occurred. The repository's working copy, bookmarks, and commits are unchanged;
-the sole effect is the new checkpoint record. (You can sanity-check that the op
-id at `@` is unchanged from what you captured in §2.)
-
-## 6. Report
+## 5. Report
 
 Return a compact result:
 
@@ -143,17 +135,6 @@ note:       before rebasing auth+billing onto trunk
 Then point at the rollback verb: roll the whole repo back to this point with
 `/jj-rewind pre-fanout-integration` (or bare `/jj-rewind` while this is the most
 recent checkpoint).
-
-## Guardrails — orchestrator-only, read-only-to-history
-
-- **Primary workspace only.** Orchestrator capability; never inside a worker.
-- **Read-only to history.** Only `jj op log` (read) + a manifest write. No
-  `jj op restore`, no rebase, no abandon, no `jj new`/`describe` during a
-  checkpoint — recording must never be the thing that needs undoing.
-- **Op-log only.** Never delete `.jj` or any repo metadata; never run raw
-  mutating git; never touch bookmarks or push.
-- **Manifest is the only store.** No new external/dedicated checkpoint file;
-  records ride in the orchestrator-owned `.jj-agent-plan.json`.
 
 ## Where this is called
 

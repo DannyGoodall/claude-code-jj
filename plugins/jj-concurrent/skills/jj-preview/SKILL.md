@@ -55,6 +55,8 @@ this skill owns only the preview choreography.
 - **Read-only to history.** Provisioning uses `jj workspace add -r <rev>`, which
   materialises `<rev>` in its own directory and never rebases `@` or moves a
   bookmark.
+- **Reads use `--ignore-working-copy`** so a preview never triggers a snapshot
+  of the primary working copy.
 
 ## Arguments
 
@@ -191,23 +193,6 @@ process, forgets a linked workspace, and removes the throwaway directory.
 already-removed directory: a missing process, an already-forgotten workspace, or
 an already-deleted directory is a no-op, not an error. Re-running teardown on a
 torn-down preview is safe.
-
-## Guardrails — orchestrator-only, read-only-to-history
-
-- **Primary workspace only.** Orchestrator capability; never inside a worker.
-  Only the orchestrator owns workspace provisioning and teardown.
-- **Read-only to history.** `jj workspace add -r <rev>` only; NEVER rebase `@`,
-  NEVER move/create a bookmark, NEVER push, NEVER archive. `@` and all refs are
-  left exactly as they were.
-- **No repo-metadata deletion.** Teardown stops the process, `jj workspace
-  forget`s the preview, and removes the throwaway dir — never `rm` under
-  `.jj`/`.git`, never raw mutating git.
-- **Reads use `--ignore-working-copy`** so a preview never triggers a snapshot
-  of the primary working copy.
-- **No remote.** No `gh`, no push, no bookmark — a preview never reaches GitHub.
-- **Reuse, don't reinvent.** Environment provisioning (gitignored-file copy +
-  worktree-include) and port assignment are `/jj-delegate`'s existing
-  conventions; the preview draws on them, it does not define new ones.
 
 ## Where this is called
 

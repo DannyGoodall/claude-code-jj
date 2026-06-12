@@ -89,11 +89,12 @@ same `../wt-<slug>` dir or the same `<slug>` bookmark:
 - workspace dir: `../wt-<session-prefix>-<slug>`
 - bookmark: `<session-prefix>-<slug>`
 
-In the **back-compat single-orchestrator path** — no session id is resolvable —
-omit the prefix entirely: the workspace dir stays `../wt-<slug>` and the
-bookmark stays the unprefixed `<slug>`/`feat/<short-slug>` form, identical to
-today. Namespacing engages only when a session id is present; a lone
-orchestrator is unchanged. Use the resolved names (prefixed or not) everywhere
+**The single back-compat rule**: when no session id is resolvable (the lone
+single-orchestrator case), omit the prefix entirely — workspace dir `../wt-<slug>`,
+bookmark `<slug>`/`feat/<short-slug>` — and use the default unnamespaced manifest
+`.jj-agent-plan.json`. Namespacing engages only when a session id is present; a
+lone orchestrator and an existing repo keep working unchanged, with no
+migration. Use the resolved names (prefixed or not) everywhere
 below — in the `jj workspace add` target, the bookmark create, all dispatch
 briefs, the manifest slice, and teardown — so a session's artifacts stay
 consistent and grouped:
@@ -221,11 +222,9 @@ every manifest read/write through the per-session path it implies:
 - **Per-session manifest path** — `.jj-agent-plan.<session-id>.json` at the
   repo root (gitignored). This session reads and writes ONLY this file; it
   never reads or writes another session's `.jj-agent-plan.*.json`.
-- **Back-compat fallback** — when no session id is resolvable (the lone
-  single-orchestrator case), fall back to the unnamespaced default path
-  `.jj-agent-plan.json`, exactly as before. An existing repo carrying a plain
-  `.jj-agent-plan.json` keeps working with no migration. Throughout this skill,
-  "the manifest" means this resolved path (per-session when a session id
+- **Back-compat fallback** — the single back-compat rule above applies: no
+  session id resolves to the default `.jj-agent-plan.json`. Throughout this
+  skill, "the manifest" means this resolved path (per-session when a session id
   exists, default otherwise).
 
 Write the manifest at the resolved path (per §3's session-id resolution;

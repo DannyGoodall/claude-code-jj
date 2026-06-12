@@ -216,16 +216,10 @@ workspace.
   the live view (manifest-only fields `unknown`), since stale slices are
   excluded; the row still renders from live jj state.
 
-## Guardrails — orchestrator-only, strictly read-only
+## Guardrails
 
-- **Primary workspace only.** This is an orchestrator capability; run it from the
-  primary (default) workspace, not a worker workspace.
 - **Read-only jj only**, plus `jj util snapshot` (which records only a sibling's
   own working copy). Reads use `--ignore-working-copy` and `--no-pager`.
-- **No bookmarks.** Never create or move a bookmark.
-- **No push.** Never `jj git push`.
-- **No raw mutating git.** No `git commit` / `add` / `checkout` / `reset` /
-  `rebase` (read-only git is fine, but prefer jj).
 - **No manifest writes.** Every agent-plan manifest (the default
   `.jj-agent-plan.json` and each per-session `.jj-agent-plan.<session-id>.json`)
   is owned by a `/jj-delegate` session; read them, never write/add/delete
@@ -234,6 +228,3 @@ workspace.
   reclamation is the orchestrator's startup sweep.
 - **No new hooks.** This skill relies only on existing read-only jj behavior and
   introduces no hooks or background processes.
-
-If you need to *change* anything in the fleet (integrate, land, unblock, abandon),
-that is `/jj-delegate`'s job — not this skill's.
