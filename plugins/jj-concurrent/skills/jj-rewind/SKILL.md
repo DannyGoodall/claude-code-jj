@@ -179,15 +179,6 @@ jj-delegate/jj-fleet guidance:
 - **A jj command itself hangs** → do not retry blindly and NEVER delete `.jj`;
   the op log itself is the recovery surface — report the hang and stop.
 
-## Guardrails — orchestrator-only, op-restore-only
-
-- **Primary workspace only.** Orchestrator capability; never inside a worker.
-- **Summary before restore, always.** Never `jj op restore` before the §3
-  summary and §4 explicit confirmation.
-- **`jj op restore` is the only rollback path.** Never delete `.jj` or any repo
-  metadata; never run raw mutating git; never touch bookmarks or push.
-- **Single-purpose.** Report stale siblings; do not auto-`update-stale` them.
-
 ## Where this is called
 
 `/jj-rewind` is the **undo-a-risky-step** beat of the reconcile lifecycle:

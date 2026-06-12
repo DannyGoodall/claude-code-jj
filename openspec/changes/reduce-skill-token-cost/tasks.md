@@ -19,10 +19,10 @@
 
 ## 4. Stage 3 — Within-file dedupe (commit 4)
 
-- [ ] 4.1 Collapse Guardrails sections that mirror Preconditions (jj-checkpoint, jj-land, jj-release, jj-absorb; sweep all 16 — jj-fleet, jj-preview, jj-rewind also have Guardrails sections); keep the section with operative ordering
-- [ ] 4.2 Remove read-only/role assertions beyond the first per file; remove pure-ceremony steps (e.g. jj-checkpoint §5 "confirm recording stayed read-only")
-- [ ] 4.3 In jj-delegate §3, collapse the three restatements of the no-session-id back-compat path into one
-- [ ] 4.4 Run lint + manifest check; capture counts; commit
+- [x] 4.1 Collapse Guardrails sections that mirror Preconditions (jj-checkpoint, jj-land, jj-release, jj-absorb; sweep all 16 — jj-fleet, jj-preview, jj-rewind also have Guardrails sections); keep the section with operative ordering
+- [x] 4.2 Remove read-only/role assertions beyond the first per file; remove pure-ceremony steps (e.g. jj-checkpoint §5 "confirm recording stayed read-only")
+- [x] 4.3 In jj-delegate §3, collapse the three restatements of the no-session-id back-compat path into one
+- [x] 4.4 Run lint + manifest check; capture counts; commit
 
 ## 5. Stage 4 — jj-openspec diet (commit 5)
 
