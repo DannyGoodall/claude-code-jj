@@ -281,8 +281,8 @@ jj makes this the easy part — **integration never halts**.
    labelled save point first with
    [`/jj-checkpoint <label>`](../jj-checkpoint/SKILL.md) (it captures the current
    op id in the manifest, read-only to history). If the step then goes wrong,
-   [`/jj-rewind [label]`](../jj-rewind/SKILL.md) rolls the whole repo back to that
-   point via `jj op restore` after a confirmation summary — the labelled form of
+   [`/jj-checkpoint rewind [label]`](../jj-checkpoint/SKILL.md) rolls the whole
+   repo back to that point via `jj op restore` after a confirmation summary — the labelled form of
    the `jj op log`/`jj op restore` recovery surface, instead of scanning the op
    log by hand under pressure. **A jj rebase always succeeds** — if there are
    conflicts they are recorded as first-class objects in the resulting commits,
@@ -395,8 +395,8 @@ removes them.
   retry blindly and NEVER delete `.jj`; `jj op log`/`jj op restore` is the
   recovery surface, orchestrator-only. When you guarded the risky step with
   [`/jj-checkpoint <label>`](../jj-checkpoint/SKILL.md) first, the labelled form
-  of that surface is [`/jj-rewind [label]`](../jj-rewind/SKILL.md) — roll the
-  whole repo back to the save point rather than hand-scanning op ids.
+  of that surface is `/jj-checkpoint rewind [label]` — roll the whole repo back
+  to the save point rather than hand-scanning op ids.
 
 ## Situational awareness
 
