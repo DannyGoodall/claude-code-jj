@@ -164,7 +164,7 @@ PRE_OP=$(jj op log --no-pager --no-graph -n1 -T 'id.short()')
 This is the same op-log save point `/jj-checkpoint` records; for this transient,
 single-step use an inline capture is enough (no named manifest checkpoint
 needed). When an operator wants a *named, persisted* save point spanning a larger
-risky sequence, `/jj-checkpoint <label>` + `/jj-rewind` are the right tools and
+risky sequence, `/jj-checkpoint <label>` + `/jj-checkpoint rewind` are the right tools and
 either satisfies the contract — what matters is that the undo is a real
 `jj op restore` to `PRE_OP`.
 

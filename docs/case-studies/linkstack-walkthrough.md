@@ -212,9 +212,9 @@ you:    hmm, that broke the toggle. undo the whole thing.
 claude: Rewinding to "before-refactor"… ✓ app.js is exactly as it was.
 ```
 
-> **🔧 Skill:** **`/jj-checkpoint`** and **`/jj-rewind`** (`jj-concurrent`) — drop a named save-point before something risky, then roll the *entire repo* back to it in one step if you don't like the result.
+> **🔧 Skill:** **`/jj-checkpoint`** and its **`rewind`** verb (`jj-concurrent`) — drop a named save-point before something risky, then roll the *entire repo* back to it in one step if you don't like the result.
 > **💡 Tips:**
-> - jj records every operation, so "undo" is real and total — `/jj-rewind` puts everything back, not just one file.
+> - jj records every operation, so "undo" is real and total — `/jj-checkpoint rewind` puts everything back, not just one file.
 > - The rewind is itself undoable. You genuinely cannot paint yourself into a corner.
 
 **Under the hood**
@@ -224,7 +224,7 @@ claude: Rewinding to "before-refactor"… ✓ app.js is exactly as it was.
 # under that label (it only *remembers* the id — it never changes history):
 jj op log                       # every jj operation has an id; this grabs the latest
 
-# /jj-rewind "before-refactor" looks up that saved op id and rolls the WHOLE repo
+# /jj-checkpoint rewind "before-refactor" looks up that saved op id and rolls the WHOLE repo
 # back to it by running:
 jj op restore <the-saved-op-id> # the whole-repo time machine
 ```
@@ -907,7 +907,7 @@ Every skill in one place — what you say, what it wraps.
 | File review fixes into the right commits | **`/jj-absorb`** | `jj absorb` |
 | Apply a PR's review comments in one go | **`/jj-pr-fixup`** | read comments → fix → `jj absorb` → push |
 | Save-point before something risky | **`/jj-checkpoint`** | remember a `jj op` id |
-| Undo the whole repo to a save-point | **`/jj-rewind`** | `jj op restore` |
+| Undo the whole repo to a save-point | **`/jj-checkpoint rewind`** | `jj op restore` |
 | See a change running, disposably | **`/jj-preview`** | `jj workspace add` + run + tear down |
 | Run a job in the background | **`/jj-delegate`** | `jj workspace add` + a `jj-workspace-worker` |
 | See what the workers are doing | **`/jj-fleet`** | read-only `jj workspace list` + plan |
@@ -937,7 +937,7 @@ Proof that this walkthrough touches everything. Each plugin capability and each 
 | `jj-release` (`/jj-release`) | [§21](#21-ship-a-release) |
 | `jj-absorb-fixup` (`/jj-absorb`) | [§2](#2-tidy-up-scattered-review-fixes), [§3](#3-address-pr-comments-in-one-shot) |
 | `jj-pr-fixup` (`/jj-pr-fixup`) | [§3](#3-address-pr-comments-in-one-shot) |
-| `jj-op-checkpoint` (`/jj-checkpoint`, `/jj-rewind`) | [§4](#4-a-risky-refactor-with-an-undo-button) |
+| `jj-op-checkpoint` (`/jj-checkpoint` record + rewind verbs) | [§4](#4-a-risky-refactor-with-an-undo-button) |
 | `jj-preview` (`/jj-preview`) | [§5](#5-see-it-running-before-you-merge) |
 | `jj-delegate` + `jj-workspace-worker` | [§7](#7-hand-a-job-to-a-background-worker), [§11](#11-split-a-big-change-across-workers), [§15](#15-a-drive-by-bug-report-on-github) |
 | `jj-fleet-status` (`/jj-fleet`) | [§8](#8-what-are-the-robots-doing), [§A1](#a1-two-people-or-two-windows-in-one-repo) |

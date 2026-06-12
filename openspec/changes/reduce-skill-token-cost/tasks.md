@@ -33,9 +33,9 @@
 
 ## 6. Stage 5 — Merge jj-checkpoint + jj-rewind (commit 6)
 
-- [ ] 6.1 Rewrite `plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md` to expose both verbs (`/jj-checkpoint <label>` record; `/jj-checkpoint rewind [label]` restore), preserving both trigger-phrase sets in the (≤700 char) description and the full rewind procedure (confirmation summary, op-restore semantics) in the body; delete `plugins/jj-concurrent/skills/jj-rewind/`
-- [ ] 6.2 Update every live cross-reference to the two skills: jj-delegate SKILL.md, jj-absorb SKILL.md, MANUAL.md, README.md, ROADMAP.md, docs/case-studies/*, `plugins/jj-concurrent/.claude-plugin/plugin.json` description, and `openspec/specs/jj-op-checkpoint/spec.md` via this change's delta (archived openspec changes stay untouched as historical record); verify `.claude-plugin/marketplace.json` needs no edit
-- [ ] 6.3 Run lint + manifest check (rewind's code blocks/tables must survive in the merged file); repo-wide grep for `jj-rewind` to confirm only historical/archive hits remain; capture counts; commit
+- [x] 6.1 Rewrite `plugins/jj-concurrent/skills/jj-checkpoint/SKILL.md` to expose both verbs (`/jj-checkpoint <label>` record; `/jj-checkpoint rewind [label]` restore), preserving both trigger-phrase sets in the (≤700 char) description and the full rewind procedure (confirmation summary, op-restore semantics) in the body; delete `plugins/jj-concurrent/skills/jj-rewind/`
+- [x] 6.2 Update every live cross-reference to the two skills: jj-delegate SKILL.md, jj-absorb SKILL.md, MANUAL.md, README.md, ROADMAP.md, docs/case-studies/*, `plugins/jj-concurrent/.claude-plugin/plugin.json` description, and `openspec/specs/jj-op-checkpoint/spec.md` via this change's delta (archived openspec changes stay untouched as historical record); verify `.claude-plugin/marketplace.json` needs no edit
+- [x] 6.3 Run lint + manifest check (rewind's code blocks/tables must survive in the merged file); repo-wide grep for `jj-rewind` to confirm only historical/archive hits remain; capture counts; commit
 
 ## 7. Stage 6 — jj-linear numbering + trigger caps (commit 7)
 

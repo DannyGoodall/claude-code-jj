@@ -81,7 +81,7 @@ batch, applied as a 3-worker fan-out and landed via the now-fixed `/jj-land`:
 own workers and reconciled in one stack
 ([case study](docs/case-studies/fleet-fanout-2026-06-09.md)):
 `jj-absorb-fixup` (`/jj-absorb`), `jj-stacked-pr` (`/jj-stacked-pr`),
-`jj-op-checkpoint` (`/jj-checkpoint` + `/jj-rewind`), and
+`jj-op-checkpoint` (`/jj-checkpoint` record + rewind verbs), and
 `workspace-aware-guard-role-enforcement` (guard now blocks worker bookmark/push).
 
 **Recently shipped (jj-concurrent-openspec v0.2.0)** — a second four-worker
