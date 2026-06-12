@@ -45,6 +45,6 @@
 
 ## 8. Final verification + report
 
-- [ ] 8.1 Run the full lint + manifest check one last time; produce the final report: per-stage diffstat, total bytes/tokens saved split frontmatter vs bodies, content-preservation manifest results (including every `--allow-drop`), all cross-references updated, and everything deliberately NOT changed with a one-line reason each
-- [ ] 8.2 List 5 manual trigger-phrase smoke checks for a fresh session: one per plugin (jj-concurrent → "fan out agents on jj workspaces"; jj-concurrent-openspec → "apply <change> on a jj workspace"; jj-concurrent-linear → "burn down the board"; jj-lifecycle → "cut a release") + the merged skill's rewind verb ("roll back that rebase")
-- [ ] 8.3 Note the dev-loop caveat in the report: local plugin edits aren't live until push → refresh marketplace → reinstall → restart session
+- [x] 8.1 Run the full lint + manifest check one last time; produce the final report: per-stage diffstat, total bytes/tokens saved split frontmatter vs bodies, content-preservation manifest results (including every `--allow-drop`), all cross-references updated, and everything deliberately NOT changed with a one-line reason each
+- [x] 8.2 List 5 manual trigger-phrase smoke checks for a fresh session: one per plugin (jj-concurrent → "fan out agents on jj workspaces"; jj-concurrent-openspec → "apply <change> on a jj workspace"; jj-concurrent-linear → "burn down the board"; jj-lifecycle → "cut a release") + the merged skill's rewind verb ("roll back that rebase")
+- [x] 8.3 Note the dev-loop caveat in the report: local plugin edits aren't live until push → refresh marketplace → reinstall → restart session
